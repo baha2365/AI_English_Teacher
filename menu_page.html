@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topics Menu</title>
+<link rel="stylesheet" href="menu_style.css">
+</head>
+
+<body>
+
+<h1 class="title">Choose a Topic</h1>
+
+<div id="menu-container"></div>
+
+<script>
+
+const topics = [
+    "JavaScript Basics",
+    "HTML Fundamentals",
+    "CSS Layouts",
+    "React Introduction",
+    "Node.js Backend",
+    "Cybersecurity Basics",
+    "Networking Fundamentals"
+];
+
+// container
+const container = document.getElementById("menu-container");
+
+// create menu dynamically
+topics.forEach(topic => {
+
+    const menuItem = document.createElement("div");
+    menuItem.classList.add("menu-item");
+
+    menuItem.textContent = topic;
+
+    // click event
+    menuItem.addEventListener("click", () => {
+        alert("You selected: " + topic);
+    });
+
+    container.appendChild(menuItem);
+
+});
+</script>
+
+</body>
+</html>
