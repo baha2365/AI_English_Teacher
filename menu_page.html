@@ -41,8 +41,13 @@ topics.forEach(topic => {
 
     // click event
     menuItem.addEventListener("click", () => {
-        alert("You selected: " + topic);
-    });
+
+    const topicParam = encodeURIComponent(topic);
+
+    // go to conversation page
+    window.location.href = `example.html?topic=${topicParam}`;
+
+});
 
     container.appendChild(menuItem);
 
