@@ -1,6 +1,5 @@
-# app.py
 from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import asyncio
@@ -17,13 +16,11 @@ MODEL_NAME = "llama3.1:8b"
 VIBEVOICE_HOST  = "localhost"
 VIBEVOICE_PORT  = 3003
 VIBEVOICE_VOICE = "en-Emma_woman"
-VIBEVOICE_STEPS = 3          # 5→3: жылдамдық үшін (сапа аздап төмендейді)
+VIBEVOICE_STEPS = 3
 SAMPLE_RATE     = 24_000
 
 app = FastAPI()
 
-# ── SYSTEM PROMPT ──────────────────────────────────────────────────────────────
-# Маңызды: "plain sentences only" — LLM markdown/bullet шығармайды
 SYSTEM_PROMPT = """
 You are Emma, a 20-year-old friendly, cheerful, and polite English teacher.
 
@@ -45,6 +42,12 @@ FORMAT RULES (very important):
 If the user message violates the rules, return an empty response.
 """
 
+TRANSLATE_SYSTEM_PROMPT = """
+You are a translation assistant. When given a single English word and a target language,
+respond with ONLY a JSON object in this exact format, no extra text:
+{"word": "the_english_word", "translation": "translated_word", "part_of_speech": "noun/verb/adj/etc", "example": "short example sentence in English"}
+"""
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -56,20 +59,14 @@ conversation = [{"role": "system", "content": SYSTEM_PROMPT}]
 
 
 def clean_for_tts(text: str) -> str:
-    """Markdown/bullet белгілерін TTS үшін тазалайды."""
-    # Bullet белгілері: *, -, • → бос орын
     text = re.sub(r"^\s*[\*\-•]\s+", " ", text, flags=re.MULTILINE)
-    # Markdown bold/italic: **text** / *text* → text
     text = re.sub(r"\*{1,2}([^*]+)\*{1,2}", r"\1", text)
-    # Артық жол аралықтарын бір бос орынға
     text = re.sub(r"\n+", " ", text)
-    # Қос бос орындарды тазалау
     text = re.sub(r" {2,}", " ", text)
     return text.strip()
 
 
 async def speak(text: str) -> None:
-    """Тазаланған мәтінді VibeVoice-қа жіберіп аудиосын ойнатады."""
     text = clean_for_tts(text)
     if not text:
         return
@@ -118,7 +115,7 @@ async def chat(request: Request):
         "messages": conversation,
         "stream":   True,
         "options": {
-            "num_predict": 80,   # 100→80: жауап қысқарады → TTS жылдамдайды
+            "num_predict": 80,
             "temperature": 0.3,
         },
     }
@@ -138,8 +135,56 @@ async def chat(request: Request):
                         yield line + "\n"
 
         conversation.append({"role": "assistant", "content": assistant_reply})
-
-        # LLM бітті → TTS фонда іске қосу
         asyncio.create_task(speak(assistant_reply))
 
     return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+@app.post("/translate")
+async def translate(request: Request):
+    """
+    Translate a single English word using the local LLM.
+    Body: { "word": "apple", "target_language": "Russian" }
+    Returns: { "word": "apple", "translation": "яблоко", "part_of_speech": "noun", "example": "..." }
+    """
+    data            = await request.json()
+    word            = data.get("word", "").strip()
+    target_language = data.get("target_language", "Russian")
+
+    if not word:
+        return JSONResponse({"error": "No word provided"}, status_code=400)
+
+    prompt = f'Translate the English word "{word}" to {target_language}.'
+
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [
+            {"role": "system", "content": TRANSLATE_SYSTEM_PROMPT},
+            {"role": "user",   "content": prompt},
+        ],
+        "stream": False,
+        "options": {
+            "num_predict": 120,
+            "temperature": 0.1,
+        },
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.post(OLLAMA_URL, json=payload)
+            result   = response.json()
+
+        raw_text = result["message"]["content"].strip()
+
+        # Extract JSON from response (model may wrap it in backticks)
+        json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        if json_match:
+            translation_data = json.loads(json_match.group())
+        else:
+            translation_data = {"word": word, "translation": raw_text, "part_of_speech": "", "example": ""}
+
+        return JSONResponse(translation_data)
+
+    except Exception as e:
+        print(f"[Translate] error: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
