@@ -19,10 +19,36 @@ if (selectedTopic) {
     document.getElementById("topicTitle").innerText = "Topic: " + selectedTopic;
 }
 
+/* ─── Bubble helpers ──────────────────────────────────────────── */
+
+const chatDiv = document.getElementById("chat");
+
+/**
+ * Append a chat bubble.
+ * @param {"user"|"assistant"|"topic"} role
+ * @param {string} text  HTML content
+ * @returns {HTMLElement}  the bubble element
+ */
+function addBubble(role, text = "") {
+    const bubble = document.createElement("div");
+    bubble.classList.add("bubble");
+
+    if (role === "user")      bubble.classList.add("bubble-user");
+    else if (role === "topic") bubble.classList.add("bubble-topic");
+    else                       bubble.classList.add("bubble-assistant");
+
+    bubble.innerHTML = text;
+    chatDiv.appendChild(bubble);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+    return bubble;
+}
+
+/* ─── Topic Conversation ──────────────────────────────────────── */
+
 async function startTopicConversation(topic) {
     const starterMessage = `Let's practice English conversation about ${topic}. Ask me simple questions about this topic.`;
 
-    chatDiv.innerHTML += `<p><b>Topic:</b> ${topic}</p>`;
+    addBubble("topic", `📌 Topic: <b>${topic}</b>`);
 
     const response = await fetch("http://localhost:8000/chat", {
         method: "POST",
@@ -33,6 +59,8 @@ async function startTopicConversation(topic) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let result = "";
+
+    const bubble = addBubble("assistant");
 
     while (true) {
         const { done, value } = await reader.read();
@@ -46,15 +74,17 @@ async function startTopicConversation(topic) {
                 const obj = JSON.parse(line);
                 if (obj.message?.content) {
                     result += obj.message.content;
-                    chatDiv.innerHTML = `<p><b>Assistant:</b> ${result}</p>`;
+                    bubble.innerHTML = result;
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
                 }
             } catch(e) {}
         }
     }
 
-    // Make the topic starter response clickable
     makeClickable(chatDiv);
 }
+
+/* ─── Animation ──────────────────────────────────────────────── */
 
 let mixer;
 let animations = [];
@@ -76,10 +106,10 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
 directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
 
-// 4. Loading the GLB File
+// 4. Load GLB
 const loader = new GLTFLoader();
 loader.load(
-    'game_girl.glb',
+    'ame_girl.glb',
     (gltf) => {
         const model = gltf.scene;
         scene.add(model);
@@ -91,21 +121,15 @@ loader.load(
         idleAction.play();
         activeAction = idleAction;
 
-        mixer.addEventListener('finished', () => {
-            fadeToIdle();
-        });
+        mixer.addEventListener('finished', () => { fadeToIdle(); });
 
         console.log("Model loaded successfully!");
     },
-    (xhr) => {
-        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-    },
-    (error) => {
-        console.error('Error loading model:', error);
-    }
+    (xhr) => console.log((xhr.loaded / xhr.total * 100) + '% loaded'),
+    (error) => console.error('Error loading model:', error)
 );
 
-// 5. Resize handler
+// 5. Resize
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -114,9 +138,7 @@ window.addEventListener('resize', () => {
 
 function playAnimation(index) {
     if (!mixer || animations.length === 0) return;
-
     const newAction = mixer.clipAction(animations[index]);
-
     if (activeAction !== newAction) {
         newAction.reset();
         newAction.setLoop(THREE.LoopOnce);
@@ -137,31 +159,27 @@ function fadeToIdle() {
 
 // 6. Render loop
 const clock = new THREE.Clock();
-
 function animate() {
     requestAnimationFrame(animate);
     if (mixer) mixer.update(clock.getDelta());
     renderer.render(scene, camera);
 }
-
 animate();
 
 /* ─── Chat UI ─────────────────────────────────────────────────── */
 
 const sendBtn = document.getElementById("sendBtn");
 const input   = document.getElementById("userInput");
-const chatDiv = document.getElementById("chat");
 
 sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keypress", function(e) {
-    if (e.key === "Enter") sendMessage();
-});
+input.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
 
 async function sendMessage() {
     const message = input.value.trim();
     if (!message) return;
 
-    chatDiv.innerHTML += `<p><b>You:</b> ${message}</p>`;
+    // User bubble — LEFT side
+    addBubble("user", message);
     input.value = "";
 
     const response = await fetch("http://localhost:8000/chat", {
@@ -174,10 +192,8 @@ async function sendMessage() {
     const decoder = new TextDecoder();
     let result    = "";
 
-    // Create the assistant paragraph once so we can update it in place
-    const assistantPara = document.createElement("p");
-    assistantPara.innerHTML = `<b>Assistant:</b> `;
-    chatDiv.appendChild(assistantPara);
+    // Create assistant bubble — RIGHT side — update in place
+    const assistantBubble = addBubble("assistant");
 
     while (true) {
         const { done, value } = await reader.read();
@@ -206,11 +222,12 @@ async function sendMessage() {
                                 document.getElementById("mainWordBox").style.display = "block";
                                 document.getElementById("mainWordBox").innerText     = parsed.main_word;
 
-                                chatDiv.innerHTML = `
-                                    <p><b>Definition:</b> ${parsed.definition}</p>
-                                    <p><b>Examples:</b> ${(parsed.examples || []).join(", ")}</p>
+                                assistantBubble.innerHTML = `
+                                    <b>Definition:</b> ${parsed.definition}<br>
+                                    <b>Examples:</b> ${(parsed.examples || []).join(", ")}
                                 `;
                                 makeClickable(chatDiv);
+                                chatDiv.scrollTop = chatDiv.scrollHeight;
                                 return;
                             }
                         }
@@ -218,8 +235,8 @@ async function sendMessage() {
                         // JSON not complete yet — keep streaming
                     }
 
-                    // Update the paragraph text (re-wrap on next tick after stream ends)
-                    assistantPara.innerHTML = `<b>Assistant:</b> ${result}`;
+                    assistantBubble.innerHTML = result;
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
                 }
             } catch(e) {
                 console.warn("Non-JSON chunk:", line);
@@ -227,10 +244,7 @@ async function sendMessage() {
         }
     }
 
-    // Stream complete — make all assistant words clickable
     makeClickable(chatDiv);
-
-    // Auto-scroll
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
@@ -241,12 +255,12 @@ window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogn
 const micBtn = document.getElementById("micBtn");
 
 if (window.SpeechRecognition) {
-    const recognition    = new SpeechRecognition();
-    recognition.continuous     = true;
-    recognition.interimResults = true;
-    recognition.lang           = 'en-US';
+    const recognition       = new SpeechRecognition();
+    recognition.continuous      = true;
+    recognition.interimResults  = true;
+    recognition.lang            = 'en-US';
 
-    let isRecording    = false;
+    let isRecording     = false;
     let finalTranscript = "";
 
     micBtn.textContent = "🎤";
@@ -257,42 +271,33 @@ if (window.SpeechRecognition) {
             recognition.start();
             isRecording = true;
             micBtn.textContent = "⏹️";
-            console.log("Voice recognition started...");
         } else {
             recognition.stop();
         }
     });
 
-    recognition.onresult = function(event) {
+    recognition.onresult = (event) => {
         let interimTranscript = "";
-
         for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalTranscript += transcript + " ";
-            } else {
-                interimTranscript += transcript;
-            }
+            const t = event.results[i][0].transcript;
+            if (event.results[i].isFinal) finalTranscript += t + " ";
+            else interimTranscript += t;
         }
-
         input.value = (finalTranscript + interimTranscript).trim();
     };
 
-    recognition.onend = function() {
+    recognition.onend = () => {
         isRecording = false;
         micBtn.textContent = "🎤";
-        console.log("Voice recognition stopped.");
     };
 
-    recognition.onerror = function(event) {
+    recognition.onerror = (event) => {
         console.error("Speech recognition error:", event.error);
         isRecording = false;
         micBtn.textContent = "🎤";
     };
 
-    sendBtn.addEventListener("click", () => {
-        if (isRecording) recognition.stop();
-    });
+    sendBtn.addEventListener("click", () => { if (isRecording) recognition.stop(); });
 } else {
     console.warn("Web Speech API not supported in this browser.");
 }

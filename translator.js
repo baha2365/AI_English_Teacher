@@ -128,7 +128,7 @@ style.textContent = `
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: #58cc02;        /* Duolingo green */
+    color: #00aeff;        /* Duolingo green */
     background: rgba(88,204,2,0.12);
     padding: 2px 6px;
     border-radius: 20px;
@@ -163,7 +163,7 @@ style.textContent = `
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #58cc02;
+    background: #00ccff;
     animation: tp-bounce 0.9s infinite ease-in-out;
   }
   .tp-dot:nth-child(2) { animation-delay: 0.15s; }
