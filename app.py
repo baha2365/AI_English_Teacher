@@ -48,6 +48,20 @@ respond with ONLY a JSON object in this exact format, no extra text:
 {"word": "the_english_word", "translation": "translated_word", "part_of_speech": "noun/verb/adj/etc", "example": "short example sentence in English"}
 """
 
+SUGGEST_SYSTEM_PROMPT = """
+You are an English grammar correction assistant.
+
+Your job:
+- Check the user's English sentence for grammar, spelling, or word-choice mistakes.
+- If there are mistakes, return a corrected version of the sentence.
+- Wrap ONLY the corrected words/phrases in <b>bold</b> HTML tags so the user can see what changed.
+- If the sentence is already correct, return exactly: {"correct": true}
+- Otherwise return ONLY a JSON object in this exact format, no extra text:
+  {"correct": false, "corrected": "The corrected sentence with <b>fixed parts</b> in bold"}
+
+Do NOT explain anything. Do NOT add any extra text outside the JSON.
+"""
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -138,6 +152,55 @@ async def chat(request: Request):
         asyncio.create_task(speak(assistant_reply))
 
     return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+@app.post("/suggest")
+async def suggest(request: Request):
+    """
+    Grammar correction suggestion for a user's message.
+    Body: { "message": "What is snacks?" }
+    Returns:
+      { "correct": true }                          — no mistakes
+      { "correct": false, "corrected": "What <b>are</b> snacks?" }  — with fixes bolded
+    """
+    data    = await request.json()
+    message = data.get("message", "").strip()
+
+    if not message:
+        return JSONResponse({"correct": True})
+
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [
+            {"role": "system", "content": SUGGEST_SYSTEM_PROMPT},
+            {"role": "user",   "content": message},
+        ],
+        "stream": False,
+        "options": {
+            "num_predict": 120,
+            "temperature": 0.1,
+        },
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.post(OLLAMA_URL, json=payload)
+            result   = response.json()
+
+        raw_text = result["message"]["content"].strip()
+
+        # Extract JSON robustly (model may wrap in backticks)
+        json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        if json_match:
+            parsed = json.loads(json_match.group())
+        else:
+            return JSONResponse({"correct": True})
+
+        return JSONResponse(parsed)
+
+    except Exception as e:
+        print(f"[Suggest] error: {e}")
+        return JSONResponse({"correct": True})
 
 
 @app.post("/translate")

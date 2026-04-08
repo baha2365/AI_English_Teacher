@@ -119,7 +119,7 @@
 
       /* User bubble — LEFT, blue */
       .bubble-user {
-        align-self: flex-start;
+        align-self: flex-end;
         background: #0A84FF;
         color: #fff;
         border-bottom-left-radius: 4px;
@@ -127,7 +127,7 @@
 
       /* Assistant bubble — RIGHT, white */
       .bubble-assistant {
-        align-self: flex-end;
+        align-self: flex-start;
         background: #ffffff;
         color: #1c1c1e;
         border-bottom-right-radius: 4px;
@@ -142,6 +142,19 @@
         font-size: 12px;
         padding: 4px 12px;
         border-radius: 20px;
+      }
+
+      /* ── SUGGESTION BUBBLE ── */
+      .bubble-suggestion {
+        align-self: center;
+        background: #ffffff;
+        color: #1c1c1e;
+        border: 1.5px solid #f0c040;
+        border-radius: 16px;
+        font-size: 14px;
+        padding: 10px 16px;
+        max-width: 85%;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.10);
       }
 
       /* INPUT */

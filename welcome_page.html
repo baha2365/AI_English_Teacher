@@ -133,6 +133,16 @@ nav a:hover{
   box-shadow:0 0 20px #00c6ff;
 }
 
+/* LESSON BUTTON */
+.lesson{
+  background:linear-gradient(-135deg, #ff7b00, #0072ff);
+}
+
+.lesson:hover{
+  transform:scale(1.1);
+  box-shadow:0 0 20px #ff0000;
+}
+
 /* TOPIC BUTTON */
 .topic{
   background:linear-gradient(135deg, #ff7b00, #ff3d00);
@@ -304,6 +314,10 @@ body{
   <div class="buttons">
     <button class="btn conversation" onclick="location.href='conversation.html'">
       <i class="fa fa-comments"></i> Conversation
+    </button>
+
+    <button class="btn lesson" onclick="location.href='../lesson/lesson.html'">
+      <i class="fa fa-graduation-cap"></i> Start Lesson
     </button>
 
     <button class="btn topic" onclick="location.href='topics.html'">

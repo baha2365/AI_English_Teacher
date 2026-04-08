@@ -25,7 +25,7 @@ const chatDiv = document.getElementById("chat");
 
 /**
  * Append a chat bubble.
- * @param {"user"|"assistant"|"topic"} role
+ * @param {"user"|"assistant"|"topic"|"suggestion"} role
  * @param {string} text  HTML content
  * @returns {HTMLElement}  the bubble element
  */
@@ -33,14 +33,55 @@ function addBubble(role, text = "") {
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
 
-    if (role === "user")      bubble.classList.add("bubble-user");
-    else if (role === "topic") bubble.classList.add("bubble-topic");
-    else                       bubble.classList.add("bubble-assistant");
+    if (role === "user")            bubble.classList.add("bubble-user");
+    else if (role === "topic")      bubble.classList.add("bubble-topic");
+    else if (role === "suggestion") bubble.classList.add("bubble-suggestion");
+    else                            bubble.classList.add("bubble-assistant");
 
     bubble.innerHTML = text;
     chatDiv.appendChild(bubble);
     chatDiv.scrollTop = chatDiv.scrollHeight;
     return bubble;
+}
+
+/* ─── Suggestion feature ──────────────────────────────────────── */
+
+/**
+ * Call /suggest and, if grammar mistakes exist, insert a 💡 suggestion
+ * bubble BEFORE anchorElement (the assistant bubble placeholder).
+ */
+async function insertSuggestion(userMessage, anchorElement) {
+    try {
+        const res  = await fetch("http://localhost:8000/suggest", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ message: userMessage }),
+        });
+        const data = await res.json();
+
+        if (!data.correct && data.corrected) {
+            // Wrapper: 💡 icon centred above the bubble
+            const wrapper = document.createElement("div");
+            wrapper.style.cssText = "display:flex; flex-direction:column; align-items:center; gap:4px;";
+
+            const icon = document.createElement("div");
+            icon.textContent = "💡";
+            icon.style.cssText = "font-size:18px;";
+
+            const bubble = document.createElement("div");
+            bubble.classList.add("bubble", "bubble-suggestion");
+            bubble.innerHTML = data.corrected;
+
+            wrapper.appendChild(icon);
+            wrapper.appendChild(bubble);
+
+            // Place it between the user bubble and the assistant bubble
+            chatDiv.insertBefore(wrapper, anchorElement);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+    } catch (e) {
+        console.warn("[suggest] error:", e);
+    }
 }
 
 /* ─── Topic Conversation ──────────────────────────────────────── */
@@ -109,7 +150,7 @@ scene.add(directionalLight);
 // 4. Load GLB
 const loader = new GLTFLoader();
 loader.load(
-    'ame_girl.glb',
+    'game_girl.glb',
     (gltf) => {
         const model = gltf.scene;
         scene.add(model);
@@ -182,6 +223,13 @@ async function sendMessage() {
     addBubble("user", message);
     input.value = "";
 
+    // Assistant bubble placeholder — RIGHT side (updated while streaming)
+    const assistantBubble = addBubble("assistant");
+
+    // Fire suggestion check in parallel with the chat request.
+    // It will inject a 💡 bubble before assistantBubble if mistakes are found.
+    insertSuggestion(message, assistantBubble);
+
     const response = await fetch("http://localhost:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -191,9 +239,6 @@ async function sendMessage() {
     const reader  = response.body.getReader();
     const decoder = new TextDecoder();
     let result    = "";
-
-    // Create assistant bubble — RIGHT side — update in place
-    const assistantBubble = addBubble("assistant");
 
     while (true) {
         const { done, value } = await reader.read();
