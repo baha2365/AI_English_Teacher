@@ -3,6 +3,7 @@ const express = require('express');
 const cors    = require('cors');
 const { connectDB } = require('./Db');
 const authRoutes    = require('./authRoutes');
+const vocabRoutes   = require('./vocabRoutes');   // ← NEW
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -15,7 +16,6 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (e.g. mobile apps, curl, Postman)
     if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       cb(null, true);
     } else {
@@ -30,7 +30,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',  authRoutes);
+app.use('/api/vocab', vocabRoutes);   // ← NEW
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
@@ -52,7 +53,11 @@ app.use((err, _req, res, _next) => {
       console.log(`🚀  Server running on http://localhost:${PORT}`);
       console.log(`   POST /api/auth/register`);
       console.log(`   POST /api/auth/login`);
-      console.log(`   GET  /api/auth/me  (protected)`);
+      console.log(`   GET  /api/auth/me        (protected)`);
+      console.log(`   GET  /api/vocab/parts    (protected)`);
+      console.log(`   GET  /api/vocab/words/:partId  (protected)`);
+      console.log(`   GET  /api/vocab/progress (protected)`);
+      console.log(`   POST /api/vocab/progress/complete (protected)`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);

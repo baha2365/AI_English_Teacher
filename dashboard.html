@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LinguaAI — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:    #F5F0E8;
+      --ink:      #1A1612;
+      --rust:     #C4572A;
+      --sage:     #4A6741;
+      --gold:     #D4A853;
+      --muted:    #7A6E65;
+      --border:   #DDD5C8;
+      --card-bg:  #FDFAF5;
+      --input-bg: #F9F5EE;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--cream);
+      color: var(--ink);
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: var(--ink);
+      padding: 1rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      font-family: 'Playfair Display', serif;
+      color: var(--cream);
+      font-size: 1.3rem;
+      letter-spacing: -0.02em;
+    }
+    .nav-brand span { color: var(--gold); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-avatar {
+      width: 38px; height: 38px;
+      background: var(--rust);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 600; font-size: 0.95rem;
+    }
+    .nav-name { color: #C8BFB5; font-size: 0.88rem; }
+    .btn-logout {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #9A9089;
+      padding: 0.4rem 1rem;
+      border-radius: 7px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { border-color: rgba(255,255,255,0.5); color: var(--cream); }
+
+    /* ── Loading / error states ── */
+    .status-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--rust);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-screen .error-icon { font-size: 2rem; }
+    .btn-retry {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1.4rem;
+      background: var(--ink); color: var(--cream);
+      border: none; border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* ── Main layout ── */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    /* ── Welcome banner ── */
+    .welcome-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--ink);
+      border-radius: 20px;
+      padding: 2.5rem 3rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(196,87,42,0.3) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .welcome-text { position: relative; z-index: 1; }
+    .welcome-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      color: var(--cream);
+      margin-bottom: 0.5rem;
+    }
+    .welcome-text h1 em { color: var(--gold); font-style: italic; }
+    .welcome-text p { color: #9A9089; font-size: 0.92rem; }
+    .level-badge {
+      position: relative; z-index: 1;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .level-badge .badge-label {
+      font-size: 0.72rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.4rem;
+    }
+    .level-badge .badge-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; color: var(--gold);
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.2rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.5rem;
+      display: flex; align-items: center; gap: 1rem;
+      animation: fadeUp 0.4s ease both;
+    }
+    .stat-card:nth-child(2) { animation-delay: 0.08s; }
+    .stat-card:nth-child(3) { animation-delay: 0.16s; }
+    .stat-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .icon-rust { background: rgba(196,87,42,0.12); }
+    .icon-sage { background: rgba(74,103,65,0.12); }
+    .icon-gold { background: rgba(212,168,83,0.12); }
+    .stat-info .stat-value {
+      font-family: 'Playfair Display', serif; font-size: 1.6rem;
+      color: var(--ink); line-height: 1;
+    }
+    .stat-info .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* ── Sections row ── */
+    .sections-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.8rem;
+      animation: fadeUp 0.4s ease both;
+    }
+    .card-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 1.2rem; color: var(--ink); }
+
+    /* ── Vocab feature card ── */
+    .vocab-feature-card {
+      background: var(--ink);
+      border: none;
+      border-radius: 16px;
+      padding: 2rem 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.4s ease 0.24s both;
+    }
+    .vocab-feature-card::before {
+      content: '';
+      position: absolute;
+      bottom: -60px; right: -60px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(127,119,221,0.3) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .vocab-feature-card:hover  { transform: translateY(-2px); }
+    .vocab-feature-card:active { transform: scale(0.99); }
+
+    .vocab-text { position: relative; z-index: 1; }
+    .vocab-text .vocab-eyebrow {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #7F77DD;
+      margin-bottom: 0.4rem;
+    }
+    .vocab-text h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--cream);
+      margin-bottom: 0.35rem;
+    }
+    .vocab-text p {
+      font-size: 0.82rem;
+      color: #9A9089;
+      line-height: 1.5;
+    }
+
+    .vocab-progress-wrap {
+      position: relative; z-index: 1;
+      flex-shrink: 0;
+      text-align: center;
+    }
+    .vocab-progress-ring {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: conic-gradient(#7F77DD var(--pct, 0%), rgba(255,255,255,0.08) 0%);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .vocab-progress-ring::after {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      background: var(--ink);
+    }
+    .vocab-progress-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--cream);
+      position: relative; z-index: 1;
+    }
+    .vocab-progress-label {
+      font-size: 0.7rem;
+      color: #9A9089;
+      margin-top: 0.3rem;
+    }
+    .vocab-arrow {
+      font-size: 1.4rem;
+      color: rgba(255,255,255,0.3);
+      position: relative; z-index: 1;
+      transition: transform 0.2s, color 0.2s;
+    }
+    .vocab-feature-card:hover .vocab-arrow {
+      transform: translateX(4px);
+      color: #7F77DD;
+    }
+
+    /* ── Lesson items ── */
+    .lesson-list { display: flex; flex-direction: column; gap: 0.8rem; }
+    .lesson-item {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.9rem 1rem;
+      background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: 10px; cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .lesson-item:hover { border-color: var(--rust); transform: translateX(4px); }
+    .lesson-item.lesson-vocab { border-color: rgba(127,119,221,0.3); }
+    .lesson-item.lesson-vocab:hover { border-color: #7F77DD; }
+    .lesson-emoji { font-size: 1.3rem; flex-shrink: 0; }
+    .lesson-info  { flex: 1; min-width: 0; }
+    .lesson-name  { font-size: 0.88rem; font-weight: 500; color: var(--ink); }
+    .lesson-meta  { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+    .lesson-arrow { color: var(--muted); font-size: 0.9rem; }
+
+    /* ── Tips ── */
+    .tips-list { display: flex; flex-direction: column; gap: 0.8rem; }
+    .tip-item {
+      padding: 0.85rem 1rem;
+      background: var(--input-bg);
+      border-left: 3px solid var(--rust);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.82rem; color: var(--muted); line-height: 1.5;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 700px) {
+      .welcome-banner  { flex-direction: column; gap: 1.5rem; padding: 1.8rem; }
+      .stats-row       { grid-template-columns: 1fr; }
+      .sections-row    { grid-template-columns: 1fr; }
+      .navbar          { padding: 1rem; }
+      .nav-name        { display: none; }
+      .vocab-feature-card { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-brand">Lingua<span>AI</span></div>
+  <div class="nav-right">
+    <div class="nav-avatar" id="navAvatar">…</div>
+    <span class="nav-name" id="navName"></span>
+    <button class="btn-logout" onclick="logout()">Log out</button>
+  </div>
+</nav>
+
+<!-- Status screen: shown while loading -->
+<div class="status-screen" id="statusScreen">
+  <div class="spinner"></div>
+  <span>Loading your dashboard…</span>
+</div>
+
+<!-- Dashboard content -->
+<main class="main" id="mainContent" style="display:none;">
+
+  <div class="welcome-banner">
+    <div class="welcome-text">
+      <h1>Hello, <em id="greetName"></em>! 👋</h1>
+      <p>Welcome to your personal AI English learning space.<br>Ready to continue your journey today?</p>
+    </div>
+    <div class="level-badge">
+      <div class="badge-label">Your level</div>
+      <div class="badge-value" id="userLevel"></div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon icon-rust">🔥</div>
+      <div class="stat-info">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Day streak</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-sage">📚</div>
+      <div class="stat-info">
+        <div class="stat-value" id="partsCompleted">0</div>
+        <div class="stat-label">Parts completed</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-gold">⭐</div>
+      <div class="stat-info">
+        <div class="stat-value" id="wordsLearned">0</div>
+        <div class="stat-label">Words learned</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Vocabulary Feature Card ── -->
+  <a href="./lesson/lesson.html" class="vocab-feature-card" id="vocabCard">
+    <div class="vocab-text">
+      <div class="vocab-eyebrow">✦ Vocabulary Builder</div>
+      <h3>Learn new words today</h3>
+      <p>Flashcard-style practice matched to your level.<br>3 words per part · 33 parts total.</p>
+    </div>
+    <div class="vocab-progress-wrap">
+      <div class="vocab-progress-ring" id="vocabRing" style="--pct: 0%">
+        <span class="vocab-progress-num" id="vocabPct">0%</span>
+      </div>
+      <div class="vocab-progress-label">progress</div>
+    </div>
+    <div class="vocab-arrow">→</div>
+  </a>
+
+  <!-- Sections -->
+  <div class="sections-row" style="margin-top: 1.5rem;">
+    <div class="card">
+      <div class="card-title">📖 Your Learning Path</div>
+      <div class="lesson-list">
+        <a href="./lesson/lesson.html" class="lesson-item lesson-vocab" style="text-decoration:none;">
+          <span class="lesson-emoji">📝</span>
+          <div class="lesson-info">
+            <div class="lesson-name">Vocabulary Builder</div>
+            <div class="lesson-meta">Flashcards · your level</div>
+          </div>
+          <span class="lesson-arrow">→</span>
+        </a>
+        <div class="lesson-item">
+          <span class="lesson-emoji">💬</span>
+          <div class="lesson-info">
+            <div class="lesson-name">Speaking Practice</div>
+            <div class="lesson-meta">Pronunciation · 15 min</div>
+          </div>
+          <span class="lesson-arrow">→</span>
+        </div>
+        <div class="lesson-item">
+          <span class="lesson-emoji">✍️</span>
+          <div class="lesson-info">
+            <div class="lesson-name">Grammar Essentials</div>
+            <div class="lesson-meta">Tenses · 20 min</div>
+          </div>
+          <span class="lesson-arrow">→</span>
+        </div>
+        <div class="lesson-item">
+          <span class="lesson-emoji">👂</span>
+          <div class="lesson-info">
+            <div class="lesson-name">Listening Comprehension</div>
+            <div class="lesson-meta">Audio exercises · 25 min</div>
+          </div>
+          <span class="lesson-arrow">→</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 Daily Tips</div>
+      <div class="tips-list">
+        <div class="tip-item">Practice speaking out loud — even just 5 minutes a day makes a huge difference.</div>
+        <div class="tip-item">Read English content you enjoy, like news, blogs, or books.</div>
+        <div class="tip-item">Don't fear mistakes — every error is a step forward.</div>
+        <div class="tip-item">Consistency beats intensity. Short daily sessions beat long weekly ones.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const API   = 'http://localhost:3030/api/auth';
+  const VOCAB = 'http://localhost:3030/api/vocab';
+
+  function logout() {
+    localStorage.removeItem('token');
+    window.location.href = 'index.html';
+  }
+
+  function showError(message) {
+    const screen = document.getElementById('statusScreen');
+    screen.innerHTML = `
+      <span class="error-icon">⚠️</span>
+      <span>${message}</span>
+      <button class="btn-retry" onclick="initDashboard()">Try again</button>
+    `;
+  }
+
+  function renderUser(user) {
+    const firstName = user.name.split(' ')[0];
+    document.getElementById('greetName').textContent  = firstName;
+    document.getElementById('navName').textContent    = user.name;
+    document.getElementById('navAvatar').textContent  = user.name[0].toUpperCase();
+    document.getElementById('userLevel').textContent  = user.level;
+    document.title = `LinguaAI — ${firstName}'s Dashboard`;
+    document.getElementById('statusScreen').style.display = 'none';
+    document.getElementById('mainContent').style.display  = 'block';
+  }
+
+  async function loadVocabProgress() {
+    const token = localStorage.getItem('token');
+    try {
+      const [partsRes, progressRes] = await Promise.all([
+        fetch(`${VOCAB}/parts`,    { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${VOCAB}/progress`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      const partsData    = await partsRes.json();
+      const progressData = await progressRes.json();
+
+      if (partsData.success && progressData.success) {
+        const total     = partsData.parts.length;
+        const done      = progressData.completed.length;
+        const pct       = total > 0 ? Math.round((done / total) * 100) : 0;
+        const wordsDone = done * 3;
+
+        document.getElementById('partsCompleted').textContent = done;
+        document.getElementById('wordsLearned').textContent   = wordsDone;
+        document.getElementById('vocabPct').textContent       = pct + '%';
+        document.getElementById('vocabRing').style.setProperty('--pct', pct + '%');
+      }
+    } catch (e) { /* progress is cosmetic, fail silently */ }
+  }
+
+  async function initDashboard() {
+    document.getElementById('statusScreen').innerHTML = `
+      <div class="spinner"></div>
+      <span>Loading your dashboard…</span>
+    `;
+    document.getElementById('statusScreen').style.display = 'flex';
+    document.getElementById('mainContent').style.display  = 'none';
+
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = 'index.html'; return; }
+
+    try {
+      const res  = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.status === 401 || res.status === 403) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showError(data.message || 'Could not load your profile. Please try again.');
+        return;
+      }
+      renderUser(data.user);
+      loadVocabProgress(); // load progress after rendering (non-blocking)
+    } catch {
+      showError('Could not reach the server. Check your connection and try again.');
+    }
+  }
+
+  initDashboard();
+</script>
+</body>
+</html>
