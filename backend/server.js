@@ -4,6 +4,7 @@ const cors    = require('cors');
 const { connectDB } = require('./Db');
 const authRoutes    = require('./authRoutes');
 const vocabRoutes   = require('./vocabRoutes');   // ← NEW
+const path = require('path');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,14 @@ app.use(express.urlencoded({ extended: true }));
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth',  authRoutes);
 app.use('/api/vocab', vocabRoutes);   // ← NEW
+
+
+app.use(
+  '/uploads',
+  express.static(
+    path.join('C:/Users/HP/three_js_tutor/images/beginner_images')
+  )
+);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

@@ -12,9 +12,12 @@
       --cream:    #F5F0E8; --ink: #1A1612; --rust: #C4572A;
       --sage:     #4A6741; --gold: #D4A853; --muted: #7A6E65;
       --border:   #DDD5C8; --card-bg: #FDFAF5; --input-bg: #F9F5EE;
+      --purple:   #776cf7; --teal: #1D9E75; --blue: #00a4aa;
+      --red:#ff0000;
     }
     html, body { height: 100%; font-family: 'DM Sans', sans-serif; background-color: var(--cream); color: var(--ink); }
 
+    /* ── Navbar ── */
     .navbar {
       background: var(--ink); padding: 1rem 2.5rem;
       display: flex; align-items: center; justify-content: space-between;
@@ -29,11 +32,13 @@
 
     .main { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
 
+    /* ── Page header ── */
     .page-header { margin-bottom: 2rem; text-align: center; }
     .page-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 3vw, 2rem); color: var(--ink); margin-bottom: 0.4rem; }
     .page-header h1 em { color: var(--rust); font-style: italic; }
     .page-header p { font-size: 0.88rem; color: var(--muted); }
 
+    /* ── Progress ── */
     .progress-wrap { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 1.8rem; display: flex; align-items: center; gap: 1.2rem; }
     .progress-info { flex: 1; }
     .progress-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
@@ -42,6 +47,7 @@
     .progress-count { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--ink); white-space: nowrap; }
     .progress-count span { font-size: 0.78rem; font-family: 'DM Sans', sans-serif; color: var(--muted); display: block; text-align: center; }
 
+    /* ── Part selector ── */
     .part-selector { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
     .part-nav-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; color: var(--ink); transition: all 0.2s; }
     .part-nav-btn:hover:not(:disabled) { background: var(--ink); color: var(--cream); border-color: var(--ink); }
@@ -50,62 +56,254 @@
     .part-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--ink); }
     .part-subtitle { font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem; }
 
-    .word-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 1.2rem; }
+    /* ── Word dots ── */
+    .word-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 1.6rem; }
     .word-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; transition: background 0.2s, transform 0.2s; }
     .word-dot.active { background: var(--rust); transform: scale(1.3); }
     .word-dot.learned { background: var(--sage); }
 
-    .scene { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 1.8rem; }
+    /* ── Image card ── */
+    .image-card {
+      width: 60%;
+      height: 100%;
+      margin: 0 auto 1rem auto;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      box-shadow: 0 4px 20px rgba(26,22,18,0.09);
+      overflow: hidden;
+      position: relative;
+      animation: fadeSlideIn 0.4s ease;
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .image-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), #e8c070);
+      border-radius: 20px 20px 0 0;
+    }
+    .image-card-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      padding: 1.2rem;
+    }
+    .image-card img {
+      max-width: 100%;
+      max-height: 100%;
+      min-width: 90%;
+      min-height: 90%;
+      object-fit: contain;
+      border-radius: 10px;
+      display: block;
+    }
+    .image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      color: var(--border);
+      height: 100%;
+      width: 100%;
+    }
+    .image-placeholder svg { width: 48px; height: 48px; opacity: 0.35; }
+    .image-placeholder span { font-size: 0.75rem; color: var(--muted); opacity: 0.55; letter-spacing: 0.04em; }
+    .image-card.no-image { display: none; }
 
-    .card { width: 90%; border-radius: 16px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; position: relative; height: 180px; }
-    .card:hover { border-color: rgba(0,0,0,0.3); height: 250px; }
-    .card:active { transform: scale(0.99); }
-    .card.expanded { height: 250px; }
+    /* ── Flip card scene ── */
+    .scene {
+      perspective: 1000px;
+      width: 100%;
+      margin-bottom: 1.2rem;
+    }
 
-    .card-accent { position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 16px 16px 0 0; }
-    .card-top .card-accent    { background: #7F77DD; }
-    .card-bottom .card-accent { background: #1D9E75; }
+    .flip-card {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.45, 0.05, 0.25, 1.0);
+      border-radius: 20px;
+      /* NO filter here — filter flattens preserve-3d and breaks backface-visibility */
+    }
+    .flip-card.flipped { transform: rotateY(180deg); }
 
-    .card-lang-tag { position: absolute; top: 14px; left: 18px; font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; }
-    .card-top .card-lang-tag    { background: rgba(127,119,221,0.12); color: #7F77DD; }
-    .card-bottom .card-lang-tag { background: rgba(29,158,117,0.12);  color: #1D9E75; }
+    /* Shared face styles */
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      /* Shadow lives on the face, not the parent */
+      box-shadow: 0 4px 20px rgba(26,22,18,0.09);
+      transition: box-shadow 0.2s;
+    }
+    .flip-card:hover .card-face { box-shadow: 0 8px 32px rgba(26,22,18,0.15); }
 
-    .card-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 1.2rem 2rem; gap: 0.5rem; }
-    .card-word { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--ink); text-align: center; line-height: 1.1; }
+    /* ── FRONT face (English) ── */
+    .card-front {
+      background: var(--purple);
+      transform: rotateY(0deg); /* explicit — stays visible at rest */
+    }
+    /* Decorative corner accent */
+    .card-front::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      border-radius: 20px 20px 0 0;
+      background: linear-gradient(90deg, var(--red), white);
+    }
+    /* Subtle background pattern */
+    .card-front::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; right: -40px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(127,119,221,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
 
-    .expand-hint { position: absolute; bottom: 10px; right: 14px; font-size: 10px; color: var(--muted); opacity: 0.6; transition: opacity 0.3s; pointer-events: none; }
-    .card.expanded .expand-hint { opacity: 0; }
+    .face-lang-badge {
+      position: absolute;
+      top: 16px; left: 20px;
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .card-front .face-lang-badge { background: rgba(127,119,221,0.12); color: black; }
+    .card-back  .face-lang-badge { background: rgba(29,158,117,0.14);  color: black;   }
 
-    .actions { display: flex; gap: 0.8rem; justify-content: center; }
+    .face-word {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      color: var(--ink);
+      text-align: center;
+      line-height: 1.15;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Flip hint */
+    .flip-hint {
+      position: absolute;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      opacity: 0.7;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .flip-icon {
+      width: 18px; height: 18px;
+      border: 1.5px solid var(--muted);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px;
+    }
+    .flip-card.flipped .flip-hint { opacity: 0; }
+
+    /* ── BACK face (Kazakh) ── */
+    .card-back {
+      background: var(--blue);
+      transform: rotateY(180deg);
+      border-color: transparent;
+    }
+    .card-back::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      border-radius: 20px 20px 0 0;
+      background: linear-gradient(90deg, yellow, #56cfaa);
+    }
+    /* Glow blob */
+    .card-back::after {
+      content: '';
+      position: absolute;
+      top: -50px; right: -50px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(29,158,117,0.18) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .card-back .face-word { color: #000000; }
+    .card-back .flip-hint { color: #6A6560; opacity: 0.5; }
+
+    /* Transliteration / subtitle on back */
+    .face-subtext {
+      font-size: 0.8rem;
+      color: #6A6560;
+      margin-top: 0.5rem;
+      letter-spacing: 0.04em;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Actions ── */
+    .actions { display: flex; gap: 0.8rem; justify-content: center; margin-top: 0.4rem; }
     .btn-action { flex: 1; max-width: 200px; padding: 0.75rem 1.2rem; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
     .btn-action:active { transform: scale(0.98); }
     .btn-learned { background: var(--sage); color: white; border-color: var(--sage); }
-    .btn-learned:hover { background: #3a5633; border-color: #3a5633; }
-    .btn-learned:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-learned:hover:not(:disabled) { background: #3a5633; border-color: #3a5633; }
+    .btn-learned:disabled { opacity: 0.38; cursor: not-allowed; }
+
+    /* ── Instruction label ── */
+    .tap-label {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.8rem;
+      letter-spacing: 0.03em;
+      min-height: 1.2em;
+      transition: opacity 0.3s;
+    }
 
     /* ── Complete banner ── */
-    .complete-banner { display: none; background: var(--ink); border-radius: 16px; padding: 2.5rem; text-align: center; position: relative; overflow: hidden; margin-top: 1rem; }
+    .complete-banner { display: none; background: var(--ink); border-radius: 16px; padding: 2.5rem; text-align: center; position: relative; overflow: hidden; margin-top: 1.4rem; }
     .complete-banner.show { display: block; }
     .complete-banner::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(212,168,83,0.25) 0%, transparent 70%); }
     .complete-banner h2 { font-family: 'Playfair Display', serif; color: var(--cream); font-size: 1.4rem; margin-bottom: 0.5rem; position: relative; z-index: 1; }
     .complete-banner p { color: #9A9089; font-size: 0.88rem; position: relative; z-index: 1; margin-bottom: 1.2rem; }
-
     .banner-actions { display: flex; gap: 0.8rem; justify-content: center; position: relative; z-index: 1; flex-wrap: wrap; }
-
-    .btn-next-part { padding: 0.75rem 1.6rem; background: rgba(255,255,255,0.1); color: var(--cream); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-    .btn-next-part:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
-
-    /* Practice with Emma button — gold, pulsing */
     .btn-convo { padding: 0.75rem 1.6rem; background: var(--gold); color: var(--ink); border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(212,168,83,0.35); animation: pulseGold 2s ease-in-out infinite; }
     .btn-convo:hover { background: #c49840; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(212,168,83,0.5); animation: none; }
     @keyframes pulseGold { 0%,100% { box-shadow: 0 4px 14px rgba(212,168,83,0.35); } 50% { box-shadow: 0 4px 22px rgba(212,168,83,0.7); } }
 
+    /* ── Status screen ── */
     .status-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 40vh; gap: 1rem; color: var(--muted); font-size: 0.9rem; }
     .spinner { width: 28px; height: 28px; border: 2.5px solid var(--border); border-top-color: var(--rust); border-radius: 50%; animation: spin 0.7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .btn-retry { padding: 0.5rem 1.4rem; background: var(--ink); color: var(--cream); border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; }
 
-    @media (max-width: 500px) { .navbar { padding: 1rem; } .card-word { font-size: 1.5rem; } .banner-actions { flex-direction: column; align-items: center; } }
+    @media (max-width: 500px) {
+      .navbar { padding: 1rem; }
+      .flip-card { height: 220px; }
+      .face-word { font-size: 1.7rem; }
+      .banner-actions { flex-direction: column; align-items: center; }
+    }
   </style>
 </head>
 <body>
@@ -148,30 +346,60 @@
 
   <div class="word-dots" id="wordDots"></div>
 
-  <div class="scene">
-    <div class="card card-top" id="cardTop" onclick="toggleCard('top')">
-      <div class="card-accent"></div>
-      <div class="card-lang-tag">English</div>
-      <div class="card-inner"><div class="card-word" id="englishWord">—</div></div>
-      <div class="expand-hint">tap to expand</div>
+  <!-- Image card -->
+  <div class="image-card" id="imageCard">
+    <div class="image-card-inner" id="imageCardInner">
+      <!-- populated by showWord() -->
+      <div class="image-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <path d="M21 15l-5-5L5 21"/>
+        </svg>
+        <span>No image available</span>
+      </div>
     </div>
-    <div class="card card-bottom" id="cardBottom" onclick="toggleCard('bottom')">
-      <div class="card-accent"></div>
-      <div class="card-lang-tag">Kazakh</div>
-      <div class="card-inner"><div class="card-word" id="kazakhWord">—</div></div>
-      <div class="expand-hint">tap to expand</div>
+  </div>
+
+  <!-- Instruction label -->
+  <p class="tap-label" id="tapLabel">Tap the card to reveal the Kazakh translation</p>
+
+  <!-- Single flip card -->
+  <div class="scene">
+    <div class="flip-card" id="flipCard" onclick="flipCard()">
+
+      <!-- FRONT: English -->
+      <div class="card-face card-front">
+        <div class="face-lang-badge">English</div>
+        <div class="face-word" id="englishWord">—</div>
+        <div class="flip-hint">
+          <div class="flip-icon">↻</div>
+          tap to flip
+        </div>
+      </div>
+
+      <!-- BACK: Kazakh -->
+      <div class="card-face card-back">
+        <div class="face-lang-badge">Kazakh</div>
+        <div class="face-word" id="kazakhWord">—</div>
+        <div class="face-subtext" id="kazakhSub"></div>
+        <div class="flip-hint">
+          <div class="flip-icon">↺</div>
+          tap to flip back
+        </div>
+      </div>
+
     </div>
   </div>
 
   <div class="actions">
-    <button class="btn-action btn-learned" id="learnedBtn" onclick="markLearned()" disabled>✓ Next</button>
+    <button class="btn-action btn-learned" id="learnedBtn" onclick="markLearned()" disabled>✓ Got it — Next</button>
   </div>
 
   <div class="complete-banner" id="completeBanner">
     <h2>🎉 Part complete!</h2>
     <p>You've learned all 3 words! Now practice them with your AI teacher Emma.</p>
     <div class="banner-actions">
-      <!-- <button class="btn-next-part" onclick="changePart(1)">Next Part →</button> -->
       <a href="conversation_after_lesson.html" class="btn-convo">💬 Practice with Emma</a>
     </div>
   </div>
@@ -191,8 +419,174 @@
   let currentWordIdx = 0;
   let learnedInPart  = new Set();
   let completedParts = new Set();
-  let activeCard     = null;
+  let isFlipped      = false;
 
+  // ── Flip card ──────────────────────────────────────────────
+  function flipCard() {
+    const card = document.getElementById('flipCard');
+    isFlipped = !isFlipped;
+    card.classList.toggle('flipped', isFlipped);
+
+    const tapLabel = document.getElementById('tapLabel');
+    const w        = words[currentWordIdx];
+
+    if (isFlipped) {
+      tapLabel.textContent = 'Now you know it — mark it and move on!';
+      // Enable "got it" only after seeing the translation and not already learned
+      if (w && !learnedInPart.has(w.id)) {
+        document.getElementById('learnedBtn').disabled = false;
+      }
+    } else {
+      tapLabel.textContent = 'Tap the card to reveal the Kazakh translation';
+      // Keep button enabled if already seen back face once
+      if (w && learnedInPart.has(w.id)) {
+        document.getElementById('learnedBtn').disabled = true;
+      }
+    }
+  }
+
+  // ── Show word ───────────────────────────────────────────────
+  function showWord(idx) {
+    currentWordIdx = idx;
+    isFlipped      = false;
+
+    const card = document.getElementById('flipCard');
+    card.style.transition = 'none';
+    card.classList.remove('flipped');
+    void card.offsetWidth;
+    card.style.transition = '';
+
+    if (!words[idx]) return;
+    const w = words[idx];
+    document.getElementById('englishWord').textContent = w.english;
+    document.getElementById('kazakhWord').textContent  = w.kazakh;
+    document.getElementById('kazakhSub').textContent   = w.transliteration || '';
+    document.getElementById('learnedBtn').disabled     = true;
+    document.getElementById('tapLabel').textContent    = 'Tap the card to reveal the Kazakh translation';
+
+    // ── Populate image card ──────────────────────────────────
+    const imageCard  = document.getElementById('imageCard');
+    const imageInner = document.getElementById('imageCardInner');
+
+    if (w.image) {
+      // Build the src: if it's already a full URL use it directly,
+      // otherwise treat it as a filename served by the backend.
+      let src = w.image;
+      if (!src.startsWith('http')) {
+        // Extract just the filename from a Windows/Unix path
+        const filename = src.replace(/\\/g, '/').split('/').pop();
+        src = `http://localhost:3030/uploads/${filename}`;
+      }
+
+      imageCard.classList.remove('no-image');
+      imageInner.innerHTML = `
+        <img src="${src}" alt="${w.english}"
+             onerror="this.parentElement.innerHTML='<div class=\\'image-placeholder\\'><svg viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'3\\'/><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'/><path d=\\'M21 15l-5-5L5 21\\'/></svg><span>Image not found</span></div>'" />
+      `;
+    } else {
+      imageCard.classList.add('no-image');
+    }
+
+    renderDots();
+  }
+
+  // ── Mark learned ────────────────────────────────────────────
+  async function markLearned() {
+    const w = words[currentWordIdx];
+    if (!w) return;
+    learnedInPart.add(w.id);
+    document.getElementById('learnedBtn').disabled = true;
+    renderDots();
+
+    if (learnedInPart.size === words.length) {
+      await markPartComplete();
+    } else {
+      const nextUnlearned = words.findIndex((wd, i) => i > currentWordIdx && !learnedInPart.has(wd.id));
+      const target = nextUnlearned >= 0 ? nextUnlearned : words.findIndex(wd => !learnedInPart.has(wd.id));
+      if (target >= 0) showWord(target);
+    }
+  }
+
+  // ── Load part ───────────────────────────────────────────────
+  async function loadPart() {
+    learnedInPart.clear();
+    currentWordIdx = 0;
+    isFlipped      = false;
+
+    const card = document.getElementById('flipCard');
+    card.classList.remove('flipped');
+    document.getElementById('completeBanner').classList.remove('show');
+
+    const part = parts[currentPartIdx];
+    document.getElementById('partTitle').textContent    = `Part ${part.part_number}`;
+    document.getElementById('partSubtitle').textContent = `3 words to learn`;
+    document.getElementById('prevPartBtn').disabled     = currentPartIdx === 0;
+    document.getElementById('nextPartBtn').disabled     = currentPartIdx === parts.length - 1;
+
+    const res  = await fetch(`${VOCAB}/words/${part.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (!data.success) return;
+    words = data.words;
+
+    renderDots();
+    showWord(0);
+  }
+
+  // ── Render dots ─────────────────────────────────────────────
+  function renderDots() {
+    const container = document.getElementById('wordDots');
+    container.innerHTML = '';
+    words.forEach((w, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'word-dot';
+      if (learnedInPart.has(w.id))  dot.classList.add('learned');
+      else if (i === currentWordIdx) dot.classList.add('active');
+      dot.onclick = () => showWord(i);
+      container.appendChild(dot);
+    });
+  }
+
+  // ── Part complete ────────────────────────────────────────────
+  async function markPartComplete() {
+    const part = parts[currentPartIdx];
+    try {
+      await fetch(`${VOCAB}/progress/complete`, {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ part_id: part.id }),
+      });
+    } catch (e) { /* best effort */ }
+
+    completedParts.add(part.id);
+    updateProgress();
+
+    localStorage.setItem('vocabSession', JSON.stringify({
+      level:      user.level,
+      partNumber: part.part_number,
+      words:      words.map(w => ({ english: w.english, kazakh: w.kazakh })),
+    }));
+
+    document.getElementById('completeBanner').classList.add('show');
+    document.getElementById('nextPartBtn').disabled = currentPartIdx === parts.length - 1;
+    document.getElementById('completeBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function changePart(dir) {
+    const next = currentPartIdx + dir;
+    if (next < 0 || next >= parts.length) return;
+    currentPartIdx = next;
+    await loadPart();
+  }
+
+  function updateProgress() {
+    const total = parts.length;
+    const done  = completedParts.size;
+    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressCount').innerHTML  = `${done}<span>/ ${total} parts</span>`;
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
   async function init() {
     try {
       const res  = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${token}` } });
@@ -204,7 +598,7 @@
       document.getElementById('levelLabel').textContent =
         `Level: ${user.level} · Work through each part to build your vocabulary`;
 
-      const pRes  = await fetch(`${VOCAB}/parts`, { headers: { Authorization: `Bearer ${token}` } });
+      const pRes  = await fetch(`${VOCAB}/parts`,    { headers: { Authorization: `Bearer ${token}` } });
       const pData = await pRes.json();
       if (!pData.success) throw new Error('Could not load parts');
       parts = pData.parts;
@@ -230,137 +624,6 @@
         <button class="btn-retry" onclick="init()">Try again</button>
       `;
     }
-  }
-
-  async function loadPart() {
-    learnedInPart.clear();
-    currentWordIdx = 0;
-    activeCard     = null;
-    resetCards();
-
-    const part = parts[currentPartIdx];
-    document.getElementById('partTitle').textContent    = `Part ${part.part_number}`;
-    document.getElementById('partSubtitle').textContent = `3 words to learn`;
-    document.getElementById('prevPartBtn').disabled     = currentPartIdx === 0;
-    document.getElementById('nextPartBtn').disabled     = currentPartIdx === parts.length - 1;
-    document.getElementById('completeBanner').classList.remove('show');
-
-    const res  = await fetch(`${VOCAB}/words/${part.id}`, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json();
-    if (!data.success) return;
-    words = data.words;
-
-    renderDots();
-    showWord(0);
-  }
-
-  function showWord(idx) {
-    currentWordIdx = idx;
-    activeCard     = null;
-    resetCards();
-    if (!words[idx]) return;
-    const w = words[idx];
-    document.getElementById('englishWord').textContent = w.english;
-    document.getElementById('kazakhWord').textContent  = w.kazakh;
-    document.getElementById('learnedBtn').disabled     = learnedInPart.has(w.id);
-    renderDots();
-  }
-
-  function toggleCard(which) {
-    const top    = document.getElementById('cardTop');
-    const bottom = document.getElementById('cardBottom');
-    if (activeCard === which) {
-      top.classList.remove('expanded');
-      bottom.classList.remove('expanded');
-      activeCard = null;
-      document.getElementById('learnedBtn').disabled = true;
-      return;
-    }
-    activeCard = which;
-    if (which === 'top') {
-      top.classList.add('expanded');
-      bottom.classList.remove('expanded');
-    } else {
-      bottom.classList.add('expanded');
-      top.classList.remove('expanded');
-      if (words[currentWordIdx] && !learnedInPart.has(words[currentWordIdx].id)) {
-        document.getElementById('learnedBtn').disabled = false;
-      }
-    }
-  }
-
-  function resetCards() {
-    document.getElementById('cardTop').classList.remove('expanded');
-    document.getElementById('cardBottom').classList.remove('expanded');
-  }
-
-  async function markLearned() {
-    const w = words[currentWordIdx];
-    if (!w) return;
-    learnedInPart.add(w.id);
-    document.getElementById('learnedBtn').disabled = true;
-    renderDots();
-
-    if (learnedInPart.size === words.length) {
-      await markPartComplete();
-    } else {
-      const nextUnlearned = words.findIndex((wd, i) => i > currentWordIdx && !learnedInPart.has(wd.id));
-      if (nextUnlearned >= 0) showWord(nextUnlearned);
-      else showWord(words.findIndex(wd => !learnedInPart.has(wd.id)));
-    }
-  }
-
-  async function markPartComplete() {
-    const part = parts[currentPartIdx];
-    try {
-      await fetch(`${VOCAB}/progress/complete`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body:   JSON.stringify({ part_id: part.id }),
-      });
-    } catch (e) { /* best effort */ }
-
-    completedParts.add(part.id);
-    updateProgress();
-
-    // Save vocab session to localStorage — conversation.html will read this
-    localStorage.setItem('vocabSession', JSON.stringify({
-      level:      user.level,
-      partNumber: part.part_number,
-      words:      words.map(w => ({ english: w.english, kazakh: w.kazakh })),
-    }));
-
-    document.getElementById('completeBanner').classList.add('show');
-    document.getElementById('nextPartBtn').disabled = currentPartIdx === parts.length - 1;
-    document.getElementById('completeBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-
-  async function changePart(dir) {
-    const next = currentPartIdx + dir;
-    if (next < 0 || next >= parts.length) return;
-    currentPartIdx = next;
-    await loadPart();
-  }
-
-  function renderDots() {
-    const container = document.getElementById('wordDots');
-    container.innerHTML = '';
-    words.forEach((w, i) => {
-      const dot = document.createElement('div');
-      dot.className = 'word-dot';
-      if (learnedInPart.has(w.id)) dot.classList.add('learned');
-      else if (i === currentWordIdx) dot.classList.add('active');
-      dot.onclick = () => showWord(i);
-      container.appendChild(dot);
-    });
-  }
-
-  function updateProgress() {
-    const total = parts.length;
-    const done  = completedParts.size;
-    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressCount').innerHTML  = `${done}<span>/ ${total} parts</span>`;
   }
 
   init();

@@ -71,7 +71,7 @@ router.get('/words/:partId', async (req, res) => {
 
   try {
     const { rows: words } = await pool.query(
-      `SELECT id, english, kazakh
+      `SELECT id, english, kazakh, image
        FROM words
        WHERE part_id = $1
        ORDER BY id ASC`,
