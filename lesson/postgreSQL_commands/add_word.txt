@@ -1,0 +1,11 @@
+INSERT INTO words (part_id, english, kazakh)
+SELECT p.id, v.english, v.kazakh
+FROM parts p
+JOIN levels l ON p.level_id = l.id
+JOIN (VALUES
+    ('friend', 'дос'),
+    ('family', 'отбасы'),
+    ('mother', 'ана')
+) AS v(english, kazakh)
+ON TRUE
+WHERE l.code = 'A1-A2' AND p.part_number = 7;
