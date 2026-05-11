@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LinguaAI — Sentence Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #F5F0E8; --ink: #1A1612; --rust: #C4572A;
+      --sage: #4A6741; --gold: #D4A853; --muted: #7A6E65;
+      --border: #DDD5C8; --card-bg: #FDFAF5;
+      --purple: #776cf7; --blue: #00a4aa;
+      --correct: #2D9E6B; --wrong: #E53E3E;
+    }
+    html, body { height: 100%; font-family: 'Open Sans', sans-serif; font-weight: 600; background: var(--cream); color: var(--ink); }
+
+    /* ── Navbar ── */
+    .navbar { background: var(--ink); padding: 1rem 2.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-brand { font-family: 'Playfair Display', serif; color: var(--cream); font-size: 1.3rem; letter-spacing: -0.02em; text-decoration: none; }
+    .nav-brand span { color: var(--gold); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-avatar { width: 38px; height: 38px; background: var(--rust); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.95rem; }
+    .btn-back { background: none; border: 1px solid rgba(255,255,255,0.2); color: #9A9089; padding: 0.4rem 1rem; border-radius: 7px; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .btn-back:hover { border-color: rgba(255,255,255,0.5); color: var(--cream); }
+
+    /* ── Layout ── */
+    .main { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+    /* ── Page header ── */
+    .page-header { margin-bottom: 1.8rem; text-align: center; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 3vw, 1.9rem); color: var(--ink); margin-bottom: 0.3rem; }
+    .page-header h1 em { color: var(--rust); font-style: italic; }
+    .page-header p { font-size: 0.85rem; color: var(--muted); }
+
+    /* ── Progress bar (linear) ── */
+    .progress-track { background: var(--border); border-radius: 4px; height: 6px; margin-bottom: 1.8rem; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--rust), var(--gold)); border-radius: 4px; transition: width 0.5s ease; width: 0%; }
+
+    /* ── Sentence dots ── */
+    .sentence-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 1.8rem; }
+    .sentence-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s, transform 0.3s; }
+    .sentence-dot.active { background: var(--rust); transform: scale(1.3); }
+    .sentence-dot.done { background: var(--sage); }
+
+    /* ── Prompt card ── */
+    .prompt-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 1.4rem;
+      position: relative;
+      overflow: hidden;
+      animation: fadeDown 0.4s ease;
+    }
+    .prompt-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), #e8c070);
+      border-radius: 16px 16px 0 0;
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .prompt-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+    .prompt-text { font-family: 'Playfair Display', serif; font-size: clamp(1.15rem, 3vw, 1.45rem); color: var(--ink); line-height: 1.45; }
+
+    /* ── Answer zone ── */
+    .zone-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.55rem; }
+
+    .answer-zone {
+      min-height: 72px;
+      background: var(--card-bg);
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+      transition: border-color 0.25s, background 0.25s;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .answer-zone.drag-over { border-color: var(--rust); background: rgba(196,87,42,0.03); }
+    .answer-zone.state-correct { border-color: var(--correct); background: rgba(45,158,107,0.06); animation: correctPop 0.4s ease; }
+    .answer-zone.state-wrong   { border-color: var(--wrong);   background: rgba(229,62,62,0.05);  animation: shake 0.45s ease; }
+    .answer-placeholder { font-size: 0.82rem; color: var(--muted); opacity: 0.6; font-style: italic; pointer-events: none; padding: 0.1rem 0; }
+
+    @keyframes correctPop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.015); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-7px); }
+      40%     { transform: translateX(7px); }
+      60%     { transform: translateX(-4px); }
+      80%     { transform: translateX(4px); }
+    }
+
+    /* ── Word chips ── */
+    .chip {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      touch-action: manipulation;
+    }
+    .chip:active { transform: scale(0.94); }
+    .chip.dragging { opacity: 0.35; transform: scale(0.92); }
+
+    /* Bank chip */
+    .chip-bank {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      color: var(--ink);
+      box-shadow: 0 2px 6px rgba(26,22,18,0.08);
+    }
+    .chip-bank:hover { border-color: var(--rust); box-shadow: 0 3px 12px rgba(196,87,42,0.2); transform: translateY(-2px); }
+
+    /* Answer chip */
+    .chip-answer {
+      background: var(--purple);
+      border: 1.5px solid rgba(119,108,247,0.35);
+      color: white;
+      box-shadow: 0 2px 8px rgba(119,108,247,0.28);
+    }
+    .chip-answer:hover { background: #6358e8; transform: translateY(-1px); }
+    .answer-zone.state-correct .chip-answer { background: var(--correct); border-color: rgba(45,158,107,0.35); box-shadow: 0 2px 8px rgba(45,158,107,0.3); }
+    .answer-zone.state-wrong   .chip-answer { background: var(--wrong);   border-color: rgba(229,62,62,0.35);  box-shadow: 0 2px 8px rgba(229,62,62,0.25); }
+
+    /* ── Word bank ── */
+    .word-bank {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-height: 58px;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      transition: border-color 0.25s;
+    }
+    .word-bank.drag-over { border-color: var(--blue); }
+
+    /* ── Feedback bar ── */
+    .feedback-bar {
+      display: none;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.9rem 1.2rem;
+      border-radius: 12px;
+      margin-bottom: 1.2rem;
+      font-size: 0.88rem;
+      animation: fadeDown 0.3s ease;
+    }
+    .feedback-bar.show { display: flex; }
+    .fb-correct { background: rgba(45,158,107,0.1); border: 1px solid rgba(45,158,107,0.3); color: #1a5c3a; }
+    .fb-wrong   { background: rgba(229,62,62,0.09); border: 1px solid rgba(229,62,62,0.25); color: #8b1c1c; }
+    .fb-icon    { font-size: 1.4rem; flex-shrink: 0; }
+    .fb-body strong { display: block; margin-bottom: 0.1rem; font-size: 0.9rem; }
+    .fb-body span   { font-size: 0.78rem; opacity: 0.8; font-weight: 500; }
+
+    /* ── Buttons ── */
+    .action-row { display: flex; gap: 0.8rem; justify-content: center; }
+    .btn-main {
+      flex: 1; max-width: 280px;
+      padding: 0.9rem 1.5rem;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-main:active { transform: scale(0.97); }
+    .btn-check { background: var(--rust); color: white; box-shadow: 0 4px 14px rgba(196,87,42,0.3); }
+    .btn-check:hover:not(:disabled) { background: #a8461f; box-shadow: 0 6px 18px rgba(196,87,42,0.45); transform: translateY(-1px); }
+    .btn-check:disabled { opacity: 0.32; cursor: not-allowed; box-shadow: none; transform: none; }
+    .btn-next { background: var(--sage); color: white; box-shadow: 0 4px 14px rgba(74,103,65,0.35); animation: pulseGreen 2s ease-in-out infinite; }
+    .btn-next:hover { background: #3a5633; animation: none; transform: translateY(-1px); }
+
+    @keyframes pulseGreen { 0%,100% { box-shadow: 0 4px 14px rgba(74,103,65,0.35); } 50% { box-shadow: 0 4px 24px rgba(74,103,65,0.65); } }
+
+    /* ── Score chips on complete ── */
+    .score-row { display: flex; gap: 1rem; justify-content: center; margin-bottom: 1.2rem; position: relative; z-index: 1; }
+    .score-chip { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 0.6rem 1.2rem; text-align: center; }
+    .score-chip .sc-num { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); display: block; }
+    .score-chip .sc-label { font-size: 0.72rem; color: #9A9089; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* ── Complete banner ── */
+    .complete-banner { display: none; background: var(--ink); border-radius: 16px; padding: 2.5rem 2rem; text-align: center; position: relative; overflow: hidden; margin-top: 2rem; }
+    .complete-banner.show { display: block; animation: fadeDown 0.5s ease; }
+    .complete-banner::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(212,168,83,0.25) 0%, transparent 70%); }
+    .complete-banner::after  { content: ''; position: absolute; bottom: -80px; left: -40px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle, rgba(119,108,247,0.1) 0%, transparent 70%); }
+    .complete-banner h2 { font-family: 'Playfair Display', serif; color: var(--cream); font-size: 1.6rem; margin-bottom: 0.4rem; position: relative; z-index: 1; }
+    .complete-banner .sub { color: #9A9089; font-size: 0.88rem; margin-bottom: 1.4rem; position: relative; z-index: 1; }
+    .banner-actions { display: flex; gap: 0.8rem; justify-content: center; position: relative; z-index: 1; flex-wrap: wrap; }
+    .btn-gold { padding: 0.8rem 1.8rem; background: var(--gold); color: var(--ink); border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(212,168,83,0.4); animation: pulseGold 2s ease-in-out infinite; transition: all 0.2s; }
+    .btn-gold:hover { background: #c49840; transform: translateY(-1px); animation: none; }
+    .btn-ghost { padding: 0.8rem 1.4rem; background: transparent; color: #9A9089; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-size: 0.88rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
+    .btn-ghost:hover { color: var(--cream); border-color: rgba(255,255,255,0.4); }
+    @keyframes pulseGold { 0%,100% { box-shadow: 0 4px 14px rgba(212,168,83,0.4); } 50% { box-shadow: 0 4px 24px rgba(212,168,83,0.7); } }
+
+    /* ── Status screen ── */
+    .status-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 40vh; gap: 1rem; color: var(--muted); font-size: 0.9rem; }
+    .spinner { width: 28px; height: 28px; border: 2.5px solid var(--border); border-top-color: var(--rust); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-retry { padding: 0.5rem 1.4rem; background: var(--ink); color: var(--cream); border: none; border-radius: 8px; font-size: 0.85rem; cursor: pointer; }
+
+    @media (max-width: 500px) {
+      .navbar { padding: 1rem; }
+      .chip { font-size: 0.8rem; padding: 0.42rem 0.8rem; }
+      .btn-main { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="../dashboard.html" class="nav-brand">Lingua<span>AI</span></a>
+  <div class="nav-right">
+    <div class="nav-avatar" id="navAvatar">…</div>
+    <a href="lesson.html" class="btn-back">← Lesson</a>
+  </div>
+</nav>
+
+<div class="status-screen" id="statusScreen">
+  <div class="spinner"></div>
+  <span>Loading sentences…</span>
+</div>
+
+<main class="main" id="mainContent" style="display:none;">
+  <div class="page-header">
+    <h1>Sentence <em>Builder</em></h1>
+    <p id="partLabel">Arrange the words to form a correct sentence</p>
+  </div>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="sentence-dots" id="sentenceDots"></div>
+
+  <!-- Kazakh prompt -->
+  <div class="prompt-card">
+    <div class="prompt-label">🇰🇿 Translate this sentence into English</div>
+    <div class="prompt-text" id="kazakhPrompt">—</div>
+  </div>
+
+  <!-- Answer zone -->
+  <div class="zone-label">Your answer — tap words to place them here</div>
+  <div class="answer-zone" id="answerZone"
+       ondragover="onDragOver(event, 'answer')"
+       ondragleave="onDragLeave(event)"
+       ondrop="onDrop(event, 'answer')">
+    <span class="answer-placeholder" id="answerPlaceholder">Tap words below to build your sentence…</span>
+  </div>
+
+  <!-- Feedback -->
+  <div class="feedback-bar" id="feedbackBar">
+    <div class="fb-icon" id="fbIcon"></div>
+    <div class="fb-body">
+      <strong id="fbTitle"></strong>
+      <span id="fbDetail"></span>
+    </div>
+  </div>
+
+  <!-- Word bank -->
+  <div class="zone-label">Word bank</div>
+  <div class="word-bank" id="wordBank"
+       ondragover="onDragOver(event, 'bank')"
+       ondragleave="onDragLeave(event)"
+       ondrop="onDrop(event, 'bank')">
+  </div>
+
+  <!-- Actions -->
+  <div class="action-row" id="actionRow">
+    <button class="btn-main btn-check" id="actionBtn" disabled>Check →</button>
+  </div>
+
+  <!-- Complete banner -->
+  <div class="complete-banner" id="completeBanner">
+    <h2>🏆 All sentences done!</h2>
+    <p class="sub" id="completeSubtitle">You've completed all sentence exercises for this part.</p>
+    <div class="score-row">
+      <div class="score-chip">
+        <span class="sc-num" id="scoreCorrect">0</span>
+        <span class="sc-label">Correct</span>
+      </div>
+      <div class="score-chip">
+        <span class="sc-num" id="scoreTotal">0</span>
+        <span class="sc-label">Total</span>
+      </div>
+    </div>
+    <div class="banner-actions">
+      <a href="lesson.html" class="btn-gold">📚 Continue Learning</a>
+      <a href="../dashboard.html" class="btn-ghost">Dashboard</a>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API   = 'http://localhost:3030/api/auth';
+  const VOCAB = 'http://localhost:3030/api/vocab';
+  const token = localStorage.getItem('token');
+  if (!token) { window.location.href = 'index.html'; }
+
+  // ── Read part_id from URL ──────────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  const partId = params.get('part_id');
+  if (!partId) { window.location.href = 'lesson.html'; }
+
+  // ── State ─────────────────────────────────────────────────
+  let sentences      = [];
+  let currentIdx     = 0;
+  let answerWords    = [];   // {id, text} chips in answer zone
+  let bankWords      = [];   // {id, text} chips in bank
+  let isChecked      = false;
+  let correctCount   = 0;
+  let dragSrc        = null; // 'answer' | 'bank'
+  let dragId         = null;
+
+  // ── Shuffle ───────────────────────────────────────────────
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // ── Load sentence ─────────────────────────────────────────
+  function loadSentence(idx) {
+    currentIdx = idx;
+    isChecked  = false;
+
+    const sent = sentences[idx];
+
+    // Show the Kazakh translation as the prompt
+    document.getElementById('kazakhPrompt').textContent =
+      sent.kazakh_sentence || sent.correct_sentence;
+
+    // Tokenise and shuffle
+    const tokens = sent.correct_sentence.trim().split(/\s+/);
+    bankWords    = shuffle(tokens.map((t, i) => ({ id: `s${idx}_w${i}`, text: t })));
+    answerWords  = [];
+
+    renderAll();
+    renderDots();
+    updateProgress();
+
+    // Reset answer zone state
+    const az = document.getElementById('answerZone');
+    az.classList.remove('state-correct', 'state-wrong');
+
+    // Reset feedback
+    document.getElementById('feedbackBar').className = 'feedback-bar';
+
+    // Reset action button — ALWAYS reset onclick back to checkAnswer
+    const btn = document.getElementById('actionBtn');
+    btn.textContent = 'Check →';
+    btn.className   = 'btn-main btn-check';
+    btn.onclick     = checkAnswer;   // ← key fix: reset every time
+    btn.disabled    = true;
+
+    // Show action row
+    document.getElementById('actionRow').style.display = 'flex';
+  }
+
+  // ── Render helpers ────────────────────────────────────────
+  function renderAll() {
+    renderBank();
+    renderAnswer();
+  }
+
+  function renderBank() {
+    const bank = document.getElementById('wordBank');
+    bank.innerHTML = '';
+    bankWords.forEach(chip => bank.appendChild(makeChip(chip, 'bank')));
+  }
+
+  function renderAnswer() {
+    const zone = document.getElementById('answerZone');
+    // Remove existing chips only (keep placeholder span)
+    zone.querySelectorAll('.chip').forEach(el => el.remove());
+    answerWords.forEach(chip => zone.appendChild(makeChip(chip, 'answer')));
+
+    const placeholder = document.getElementById('answerPlaceholder');
+    placeholder.style.display = answerWords.length ? 'none' : '';
+
+    // Enable check only when there are words in answer zone
+    document.getElementById('actionBtn').disabled = answerWords.length === 0 || isChecked;
+  }
+
+  // ── Build chip element ────────────────────────────────────
+  function makeChip(chip, zone) {
+    const el = document.createElement('div');
+    el.className   = `chip ${zone === 'bank' ? 'chip-bank' : 'chip-answer'}`;
+    el.textContent = chip.text;
+    el.dataset.id  = chip.id;
+    el.draggable   = true;
+
+    // ── Click to move ──────────────────────────────────────
+    el.addEventListener('click', () => {
+      if (isChecked) return;
+      moveChip(chip.id, zone, zone === 'bank' ? 'answer' : 'bank');
+    });
+
+    // ── Drag events ────────────────────────────────────────
+    el.addEventListener('dragstart', e => {
+      dragSrc = zone;
+      dragId  = chip.id;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+
+    return el;
+  }
+
+  // ── Move chip ─────────────────────────────────────────────
+  function moveChip(id, from, to) {
+    if (from === 'bank') {
+      const i = bankWords.findIndex(c => c.id === id);
+      if (i < 0) return;
+      const [chip] = bankWords.splice(i, 1);
+      answerWords.push(chip);
+    } else {
+      const i = answerWords.findIndex(c => c.id === id);
+      if (i < 0) return;
+      const [chip] = answerWords.splice(i, 1);
+      bankWords.push(chip);
+    }
+    renderAll();
+  }
+
+  // ── Drag-and-drop handlers ────────────────────────────────
+  function onDragOver(e, zone) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  }
+  function onDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+  function onDrop(e, targetZone) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    if (!dragId || dragSrc === targetZone) return;
+    moveChip(dragId, dragSrc, targetZone);
+    dragId = null;
+    dragSrc = null;
+  }
+
+  // ── Check answer ──────────────────────────────────────────
+  function checkAnswer() {
+    if (isChecked) return;   // guard — prevent double-fire
+    isChecked = true;
+
+    const sent       = sentences[currentIdx];
+    const userAnswer = answerWords.map(c => c.text).join(' ');
+    const correct    = sent.correct_sentence.trim();
+    const isRight    = userAnswer.toLowerCase() === correct.toLowerCase();
+
+    const az = document.getElementById('answerZone');
+    const fb = document.getElementById('feedbackBar');
+
+    if (isRight) {
+      correctCount++;
+      az.classList.add('state-correct');
+      fb.className = 'feedback-bar show fb-correct';
+      document.getElementById('fbIcon').textContent   = '🎉';
+      document.getElementById('fbTitle').textContent  = 'Correct!';
+      document.getElementById('fbDetail').textContent = `"${correct}"`;
+    } else {
+      az.classList.add('state-wrong');
+      fb.className = 'feedback-bar show fb-wrong';
+      document.getElementById('fbIcon').textContent   = '✗';
+      document.getElementById('fbTitle').textContent  = 'Not quite…';
+      document.getElementById('fbDetail').textContent = `Correct answer: "${correct}"`;
+    }
+
+    const isLast = currentIdx === sentences.length - 1;
+    const btn    = document.getElementById('actionBtn');
+
+    if (isLast) {
+      // Last sentence: show Finish, redirect to dashboard on click
+      btn.textContent = '🏆 Finish';
+      btn.className   = 'btn-main btn-next';
+      btn.onclick     = () => { window.location.href = '../dashboard.html'; };
+    } else {
+      // Not last: show Next, load next sentence on click
+      btn.textContent = 'Next →';
+      btn.className   = 'btn-main btn-next';
+      btn.onclick     = () => loadSentence(currentIdx + 1);
+    }
+    btn.disabled = false;
+
+    renderDots();
+  }
+
+  // ── Dots ──────────────────────────────────────────────────
+  function renderDots() {
+    const container = document.getElementById('sentenceDots');
+    container.innerHTML = '';
+    sentences.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'sentence-dot';
+      if (isChecked && i < currentIdx) dot.classList.add('done');
+      else if (isChecked && i === currentIdx && i < sentences.length - 1) dot.classList.add('done');
+      else if (!isChecked && i < currentIdx) dot.classList.add('done');
+      else if (i === currentIdx && !isChecked) dot.classList.add('active');
+      else if (i === currentIdx && isChecked) dot.classList.add('active');
+      container.appendChild(dot);
+    });
+  }
+
+  // ── Progress bar ──────────────────────────────────────────
+  function updateProgress() {
+    const pct = sentences.length > 0 ? Math.round((currentIdx / sentences.length) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+  }
+
+  // ── Show complete ─────────────────────────────────────────
+  function showComplete() {
+    document.getElementById('actionRow').style.display = 'none';
+    document.getElementById('feedbackBar').className   = 'feedback-bar';
+
+    // Mark all dots done
+    document.querySelectorAll('.sentence-dot').forEach(d => {
+      d.className = 'sentence-dot done';
+    });
+    document.getElementById('progressFill').style.width = '100%';
+
+    document.getElementById('scoreCorrect').textContent = correctCount;
+    document.getElementById('scoreTotal').textContent   = sentences.length;
+    document.getElementById('completeSubtitle').textContent =
+      `You got ${correctCount} out of ${sentences.length} sentences correct. Great job!`;
+
+    document.getElementById('completeBanner').classList.add('show');
+    document.getElementById('completeBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  async function init() {
+    try {
+      // Auth
+      const res  = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok || !data.success) { window.location.href = 'index.html'; return; }
+      document.getElementById('navAvatar').textContent = data.user.name[0].toUpperCase();
+
+      // Sentences for this part
+      const sRes  = await fetch(`${VOCAB}/sentences/${partId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const sData = await sRes.json();
+
+      if (!sData.success || !sData.sentences || sData.sentences.length === 0) {
+        throw new Error('No sentences available for this part.');
+      }
+
+      sentences = sData.sentences;
+      const partNum = sData.part_number || partId;
+      document.getElementById('partLabel').textContent = `Part ${partNum} · Arrange the words into the correct order`;
+
+      document.getElementById('statusScreen').style.display = 'none';
+      document.getElementById('mainContent').style.display  = 'block';
+
+      loadSentence(0);
+    } catch (err) {
+      console.error(err);
+      document.getElementById('statusScreen').innerHTML = `
+        <span style="font-size:2rem">⚠️</span>
+        <span>${err.message || 'Could not load sentences. Is the server running?'}</span>
+        <button class="btn-retry" onclick="init()">Try again</button>
+      `;
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

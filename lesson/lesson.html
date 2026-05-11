@@ -134,7 +134,6 @@
       transform-style: preserve-3d;
       transition: transform 0.6s cubic-bezier(0.45, 0.05, 0.25, 1.0);
       border-radius: 20px;
-      /* NO filter here — filter flattens preserve-3d and breaks backface-visibility */
     }
     .flip-card.flipped { transform: rotateY(180deg); }
 
@@ -152,7 +151,6 @@
       padding: 2rem;
       overflow: hidden;
       border: 1px solid var(--border);
-      /* Shadow lives on the face, not the parent */
       box-shadow: 0 4px 20px rgba(26,22,18,0.09);
       transition: box-shadow 0.2s;
     }
@@ -161,9 +159,8 @@
     /* ── FRONT face (English) ── */
     .card-front {
       background: var(--purple);
-      transform: rotateY(0deg); /* explicit — stays visible at rest */
+      transform: rotateY(0deg);
     }
-    /* Decorative corner accent */
     .card-front::before {
       content: '';
       position: absolute;
@@ -172,7 +169,6 @@
       border-radius: 20px 20px 0 0;
       background: linear-gradient(90deg, var(--red), white);
     }
-    /* Subtle background pattern */
     .card-front::after {
       content: '';
       position: absolute;
@@ -240,7 +236,6 @@
       border-radius: 20px 20px 0 0;
       background: linear-gradient(90deg, yellow, #56cfaa);
     }
-    /* Glow blob */
     .card-back::after {
       content: '';
       position: absolute;
@@ -351,7 +346,6 @@
   <!-- Image card -->
   <div class="image-card" id="imageCard">
     <div class="image-card-inner" id="imageCardInner">
-      <!-- populated by showWord() -->
       <div class="image-placeholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
           <rect x="3" y="3" width="18" height="18" rx="3"/>
@@ -398,11 +392,12 @@
     <button class="btn-action btn-learned" id="learnedBtn" onclick="markLearned()" disabled>✓ Got it — Next</button>
   </div>
 
+  <!-- ── Complete banner (no Emma link — goes to Sentence Builder) ── -->
   <div class="complete-banner" id="completeBanner">
     <h2>🎉 Part complete!</h2>
-    <p>You've learned all 3 words! Now practice them with your AI teacher Emma.</p>
+    <p>You've learned all 3 words! Now practice building sentences with them.</p>
     <div class="banner-actions">
-      <a href="conversation_after_lesson.html" class="btn-convo">💬 Practice with Emma</a>
+      <a href="#" class="btn-convo" id="practiceBtn">✍️ Build Sentences</a>
     </div>
   </div>
 </main>
@@ -434,13 +429,11 @@
 
     if (isFlipped) {
       tapLabel.textContent = 'Now you know it — mark it and move on!';
-      // Enable "got it" only after seeing the translation and not already learned
       if (w && !learnedInPart.has(w.id)) {
         document.getElementById('learnedBtn').disabled = false;
       }
     } else {
       tapLabel.textContent = 'Tap the card to reveal the Kazakh translation';
-      // Keep button enabled if already seen back face once
       if (w && learnedInPart.has(w.id)) {
         document.getElementById('learnedBtn').disabled = true;
       }
@@ -471,11 +464,8 @@
     const imageInner = document.getElementById('imageCardInner');
 
     if (w.image) {
-      // Build the src: if it's already a full URL use it directly,
-      // otherwise treat it as a filename served by the backend.
       let src = w.image;
       if (!src.startsWith('http')) {
-        // Extract just the filename from a Windows/Unix path
         const filename = src.replace(/\\/g, '/').split('/').pop();
         src = `http://localhost:3030/uploads/${filename}`;
       }
@@ -562,11 +552,16 @@
     completedParts.add(part.id);
     updateProgress();
 
+    // Save session for reference
     localStorage.setItem('vocabSession', JSON.stringify({
       level:      user.level,
       partNumber: part.part_number,
+      partId:     part.id,
       words:      words.map(w => ({ english: w.english, kazakh: w.kazakh })),
     }));
+
+    // ── Point the practice button at the sentence builder for THIS part ──
+    document.getElementById('practiceBtn').href = `sentence_builder.html?part_id=${part.id}`;
 
     document.getElementById('completeBanner').classList.add('show');
     document.getElementById('nextPartBtn').disabled = currentPartIdx === parts.length - 1;

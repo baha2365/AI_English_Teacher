@@ -8,8 +8,6 @@ const router = express.Router();
 router.use(authenticate);
 
 // ─── Level code → level name mapping ─────────────────────────────────────────
-// user.level is stored as e.g. "Beginner A1-A2"
-// levels table has code: 'A1-A2', 'B1-B2', 'C1-C2'
 function extractLevelCode(userLevel) {
   if (!userLevel) return null;
   const match = userLevel.match(/([ABC][12]-[ABC][12])/);
@@ -17,10 +15,8 @@ function extractLevelCode(userLevel) {
 }
 
 // ─── GET /api/vocab/parts ─────────────────────────────────────────────────────
-// Returns all parts for the user's level, ordered by part_number
 router.get('/parts', async (req, res) => {
   try {
-    // Get user's level
     const { rows: userRows } = await pool.query(
       'SELECT level FROM users WHERE id = $1',
       [req.userId]
@@ -34,7 +30,6 @@ router.get('/parts', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid user level.' });
     }
 
-    // Get level id
     const { rows: levelRows } = await pool.query(
       'SELECT id FROM levels WHERE code = $1',
       [levelCode]
@@ -45,7 +40,6 @@ router.get('/parts', async (req, res) => {
 
     const levelId = levelRows[0].id;
 
-    // Get all parts for this level
     const { rows: parts } = await pool.query(
       `SELECT id, part_number
        FROM parts
@@ -62,7 +56,6 @@ router.get('/parts', async (req, res) => {
 });
 
 // ─── GET /api/vocab/words/:partId ─────────────────────────────────────────────
-// Returns words for a specific part
 router.get('/words/:partId', async (req, res) => {
   const partId = parseInt(req.params.partId, 10);
   if (isNaN(partId)) {
@@ -85,8 +78,47 @@ router.get('/words/:partId', async (req, res) => {
   }
 });
 
+// ─── GET /api/vocab/sentences/:partId ────────────────────────────────────────
+// Returns all sentences for a specific part, along with the part_number.
+// Used by sentence_builder.html for the drag-and-drop exercise.
+router.get('/sentences/:partId', async (req, res) => {
+  const partId = parseInt(req.params.partId, 10);
+  if (isNaN(partId)) {
+    return res.status(400).json({ success: false, message: 'Invalid part ID.' });
+  }
+
+  try {
+    // Fetch sentences for this part
+    const { rows: sentences } = await pool.query(
+      `SELECT id, part_id, correct_sentence, kazakh_sentence
+       FROM sentences
+       WHERE part_id = $1
+       ORDER BY id ASC`,
+      [partId]
+    );
+
+    if (!sentences.length) {
+      return res.status(404).json({
+        success: false,
+        message: `No sentences found for part ${partId}.`,
+      });
+    }
+
+    // Also return part_number so the frontend can display "Part X"
+    const { rows: partRows } = await pool.query(
+      'SELECT part_number FROM parts WHERE id = $1',
+      [partId]
+    );
+    const part_number = partRows.length ? partRows[0].part_number : partId;
+
+    return res.json({ success: true, part_number, sentences });
+  } catch (err) {
+    console.error('GET /vocab/sentences error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+});
+
 // ─── GET /api/vocab/progress ──────────────────────────────────────────────────
-// Returns all completed part IDs for the current user
 router.get('/progress', async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -103,7 +135,6 @@ router.get('/progress', async (req, res) => {
 });
 
 // ─── POST /api/vocab/progress/complete ───────────────────────────────────────
-// Marks a part as completed (upsert)
 router.post('/progress/complete', async (req, res) => {
   const { part_id } = req.body;
   if (!part_id) {
