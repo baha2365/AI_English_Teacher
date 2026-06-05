@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quizzz — Create Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple-deep:  #3d1e8e;
+    --purple-dark:  #5a35cc;
+    --purple-mid:   #7c4dff;
+    --purple-light: #a07cff;
+    --purple-bg:    #6c3de0;
+    --yellow:       #ffd740;
+    --yellow-dark:  #e6b800;
+    --green:        #2ecc71;
+    --red-a:        #e21b3c;
+    --blue-b:       #1368ce;
+    --green-c:      #26890c;
+    --orange-d:     #e5a000;
+    --surface:      rgba(255,255,255,0.10);
+    --surface-hover:rgba(255,255,255,0.16);
+    --border:       rgba(255,255,255,0.18);
+    --text-main:    #ffffff;
+    --text-muted:   rgba(255,255,255,0.65);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--purple-dark);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text-main);
+  }
+
+  /* ── LAYOUT ── */
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 60px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    width: 100%;
+    background: var(--purple-bg);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  }
+  .logo { font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+  .logo span { color: var(--yellow); }
+  .header-tag {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .save-btn-top {
+    background: var(--yellow);
+    color: var(--purple-deep);
+    border: none;
+    border-radius: 30px;
+    padding: 9px 22px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.12s, background 0.15s;
+    white-space: nowrap;
+  }
+  .save-btn-top:hover  { transform: scale(1.04); background: var(--yellow-dark); }
+  .save-btn-top:active { transform: scale(0.96); }
+
+  /* ── MAIN WRAPPER ── */
+  .main {
+    width: 100%;
+    max-width: 780px;
+    padding: 28px 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px 22px 20px;
+    backdrop-filter: blur(6px);
+  }
+
+  /* ── QUIZ META ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .input-field {
+    width: 100%;
+    background: rgba(255,255,255,0.10);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    resize: none;
+  }
+  .input-field::placeholder { color: rgba(255,255,255,0.35); font-weight: 600; }
+  .input-field:focus {
+    border-color: var(--yellow);
+    background: rgba(255,255,255,0.14);
+  }
+  .meta-row { display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── QUESTION CARD ── */
+  .question-card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px 20px 16px;
+    backdrop-filter: blur(6px);
+    position: relative;
+    transition: box-shadow 0.2s;
+  }
+  .question-card:focus-within {
+    box-shadow: 0 0 0 2px var(--yellow);
+  }
+
+  .question-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .q-number {
+    background: var(--yellow);
+    color: var(--purple-deep);
+    font-size: 13px;
+    font-weight: 900;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .q-label { font-size: 13px; font-weight: 800; color: var(--text-muted); flex: 1; }
+  .remove-q-btn {
+    background: rgba(226,27,60,0.18);
+    border: none;
+    border-radius: 8px;
+    color: #ff6b8a;
+    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: monospace;
+    line-height: 1;
+  }
+  .remove-q-btn:hover { background: rgba(226,27,60,0.35); }
+
+  /* ── ANSWERS GRID ── */
+  .answers-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 14px 0 10px;
+  }
+  .answers-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .answer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .answer-color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .answer-color-dot.ca { background: var(--red-a); }
+  .answer-color-dot.cb { background: var(--blue-b); }
+  .answer-color-dot.cc { background: var(--green-c); }
+  .answer-color-dot.cd { background: var(--orange-d); }
+  .answer-color-dot.ce { background: var(--purple-light); }
+
+  .answer-input {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .answer-input::placeholder { color: rgba(255,255,255,0.30); font-weight: 600; }
+  .answer-input:focus {
+    border-color: var(--yellow);
+    background: rgba(255,255,255,0.12);
+  }
+  .answer-input.is-correct-input {
+    border-color: var(--green);
+    background: rgba(46,204,113,0.12);
+  }
+
+  /* Radio pill */
+  .correct-radio {
+    display: none;
+  }
+  .correct-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .correct-label:hover { background: rgba(46,204,113,0.15); border-color: var(--green); color: var(--green); }
+  .correct-radio:checked + .correct-label {
+    background: rgba(46,204,113,0.22);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .correct-label .check-icon { font-size: 13px; }
+
+  /* Remove answer */
+  .remove-a-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.30);
+    font-size: 18px;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+    font-family: monospace;
+    line-height: 1;
+  }
+  .remove-a-btn:hover { color: #ff6b8a; background: rgba(226,27,60,0.15); }
+  .remove-a-btn:disabled { opacity: 0.2; cursor: default; pointer-events: none; }
+
+  /* ── ADD ANSWER ── */
+  .add-answer-btn {
+    margin-top: 10px;
+    background: rgba(255,255,255,0.07);
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 9px;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .add-answer-btn:hover:not(:disabled) {
+    background: rgba(255,215,64,0.10);
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+  .add-answer-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── ADD QUESTION ── */
+  .add-question-btn {
+    background: rgba(255,255,255,0.09);
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    color: var(--text-muted);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    padding: 16px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .add-question-btn:hover {
+    background: rgba(255,215,64,0.10);
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+
+  /* ── SAVE SECTION ── */
+  .save-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding-top: 4px;
+  }
+  .save-main-btn {
+    background: var(--yellow);
+    color: var(--purple-deep);
+    border: none;
+    border-radius: 40px;
+    padding: 15px 60px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 17px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.12s, background 0.15s;
+    width: 100%;
+    max-width: 380px;
+  }
+  .save-main-btn:hover  { transform: scale(1.03); background: var(--yellow-dark); }
+  .save-main-btn:active { transform: scale(0.97); }
+  .save-main-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--purple-deep);
+    border: 1.5px solid var(--border);
+    border-radius: 40px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    z-index: 999;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error   { border-color: #ff6b8a; color: #ff6b8a; }
+
+  /* ── ANSWER COUNT HINT ── */
+  .answer-count-hint {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 6px;
+    text-align: right;
+  }
+  .answer-count-hint.warn { color: #ffaa44; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 520px) {
+    .main { padding: 18px 12px 0; gap: 14px; }
+    .card, .question-card { padding: 16px 14px 14px; border-radius: 16px; }
+    .save-main-btn { padding: 14px 40px; font-size: 15px; }
+    .correct-label span.label-text { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">quiz<span>zz</span></div>
+    <span class="header-tag">Teacher Studio</span>
+    <button class="save-btn-top" id="topSaveBtn">Save Quiz ↑</button>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- Quiz Meta -->
+    <div class="card">
+      <div class="section-label">Quiz Details</div>
+      <div class="meta-row">
+        <input class="input-field" id="quizTitle" type="text"
+               placeholder="Quiz title, e.g. "Unit 3 Vocabulary Check"" maxlength="255">
+        <textarea class="input-field" id="quizDesc" rows="2"
+                  placeholder="Description (optional)"
+                  style="resize:vertical;min-height:56px;"></textarea>
+      </div>
+    </div>
+
+    <!-- Questions will be injected here -->
+    <div id="questionsContainer"></div>
+
+    <!-- Add Question -->
+    <button class="add-question-btn" id="addQBtn">
+      <span style="font-size:20px;line-height:1">＋</span>
+      Add Question
+    </button>
+
+    <!-- Save -->
+    <div class="save-section">
+      <button class="save-main-btn" id="saveBtn">Save Quiz</button>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+const API_BASE = 'http://localhost:3030/api';
+let questions = [];  // [{ id, answers: [{ id, text, isCorrect }] }]
+let nextQId = 0;
+let nextAId = 0;
+
+const ANSWER_COLORS = ['ca','cb','cc','cd','ce'];
+const ANSWER_PLACEHOLDERS = ['Answer A', 'Answer B', 'Answer C', 'Answer D', 'Answer E'];
+const MIN_ANSWERS = 2;
+const MAX_ANSWERS = 5;
+
+// ─── Bootstrap ───────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  addQuestion(); // start with one question
+  document.getElementById('addQBtn').addEventListener('click', addQuestion);
+  document.getElementById('saveBtn').addEventListener('click', saveQuiz);
+  document.getElementById('topSaveBtn').addEventListener('click', saveQuiz);
+});
+
+// ─── Add / Remove Question ───────────────────────────────────────────────────
+function addQuestion() {
+  const qId = nextQId++;
+  const answers = [makeAnswer(), makeAnswer()]; // start with 2
+  questions.push({ id: qId, answers });
+  renderQuestions();
+  // Scroll new card into view
+  setTimeout(() => {
+    const card = document.querySelector(`[data-qid="${qId}"]`);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 80);
+}
+
+function removeQuestion(qId) {
+  questions = questions.filter(q => q.id !== qId);
+  renderQuestions();
+}
+
+// ─── Add / Remove Answer ─────────────────────────────────────────────────────
+function addAnswer(qId) {
+  const q = questions.find(q => q.id === qId);
+  if (!q || q.answers.length >= MAX_ANSWERS) return;
+  q.answers.push(makeAnswer());
+  renderQuestion(q);
+  updateGlobalButtons();
+}
+
+function removeAnswer(qId, aId) {
+  const q = questions.find(q => q.id === qId);
+  if (!q || q.answers.length <= MIN_ANSWERS) return;
+  const wasCorrect = q.answers.find(a => a.id === aId)?.isCorrect;
+  q.answers = q.answers.filter(a => a.id !== aId);
+  // If the correct answer was removed, auto-select the first
+  if (wasCorrect && q.answers.length) q.answers[0].isCorrect = true;
+  renderQuestion(q);
+  updateGlobalButtons();
+}
+
+function makeAnswer() {
+  return { id: nextAId++, text: '', isCorrect: false };
+}
+
+// ─── Correct answer selection ─────────────────────────────────────────────────
+function setCorrect(qId, aId) {
+  const q = questions.find(q => q.id === qId);
+  if (!q) return;
+  q.answers.forEach(a => a.isCorrect = (a.id === aId));
+  // Update input classes without full re-render for smooth UX
+  q.answers.forEach(a => {
+    const inp = document.querySelector(`[data-aid="${a.id}"] .answer-input`);
+    if (inp) inp.classList.toggle('is-correct-input', a.isCorrect);
+  });
+}
+
+// ─── Sync text changes back to state (on input events) ───────────────────────
+function syncAnswerText(qId, aId, value) {
+  const q = questions.find(q => q.id === qId);
+  if (!q) return;
+  const a = q.answers.find(a => a.id === aId);
+  if (a) a.text = value;
+}
+
+function syncQuestionText(qId, value) {
+  const q = questions.find(q => q.id === qId);
+  if (q) q.text = value;
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderQuestions() {
+  const container = document.getElementById('questionsContainer');
+  // Re-render changed structure; preserve focus on active element
+  const focused = document.activeElement;
+  container.innerHTML = '';
+  questions.forEach((q, idx) => {
+    const card = buildQuestionCard(q, idx + 1);
+    container.appendChild(card);
+  });
+  updateGlobalButtons();
+  // Re-focus if it was an input we're tracking
+  if (focused && focused.dataset && focused.dataset.refocus) {
+    const el = document.querySelector(`[data-refocus="${focused.dataset.refocus}"]`);
+    if (el) { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); }
+  }
+}
+
+function renderQuestion(q) {
+  const existing = document.querySelector(`[data-qid="${q.id}"]`);
+  if (!existing) { renderQuestions(); return; }
+  const idx = questions.findIndex(qq => qq.id === q.id);
+  const card = buildQuestionCard(q, idx + 1);
+  existing.replaceWith(card);
+  updateGlobalButtons();
+}
+
+function buildQuestionCard(q, index) {
+  const card = document.createElement('div');
+  card.className = 'question-card';
+  card.setAttribute('data-qid', q.id);
+
+  const canRemove = questions.length > 1;
+
+  // Question header
+  const header = document.createElement('div');
+  header.className = 'question-header';
+  header.innerHTML = `
+    <div class="q-number">${index}</div>
+    <div class="q-label">Question ${index}</div>
+    ${canRemove ? `<button class="remove-q-btn" title="Remove question" onclick="removeQuestion(${q.id})">×</button>` : ''}
+  `;
+  card.appendChild(header);
+
+  // Question textarea
+  const qInput = document.createElement('textarea');
+  qInput.className = 'input-field';
+  qInput.rows = 2;
+  qInput.placeholder = 'Type your question here…';
+  qInput.style.resize = 'vertical';
+  qInput.style.minHeight = '56px';
+  qInput.value = q.text || '';
+  qInput.setAttribute('data-refocus', `q-${q.id}`);
+  qInput.setAttribute('data-refocus', `q-${q.id}`);
+  qInput.addEventListener('input', () => syncQuestionText(q.id, qInput.value));
+  card.appendChild(qInput);
+
+  // Answers label
+  const aLabel = document.createElement('div');
+  aLabel.className = 'answers-label';
+  aLabel.textContent = 'Answers — select the correct one ✓';
+  card.appendChild(aLabel);
+
+  // Answers list
+  const list = document.createElement('div');
+  list.className = 'answers-list';
+
+  q.answers.forEach((a, ai) => {
+    const row = document.createElement('div');
+    row.className = 'answer-row';
+    row.setAttribute('data-aid', a.id);
+
+    const dot = document.createElement('div');
+    dot.className = `answer-color-dot ${ANSWER_COLORS[ai] || 'ce'}`;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'answer-input' + (a.isCorrect ? ' is-correct-input' : '');
+    input.placeholder = ANSWER_PLACEHOLDERS[ai] || `Answer ${ai + 1}`;
+    input.value = a.text || '';
+    input.setAttribute('data-refocus', `a-${a.id}`);
+    input.addEventListener('input', () => syncAnswerText(q.id, a.id, input.value));
+
+    // Correct radio (hidden) + label
+    const radioId = `correct-${q.id}-${a.id}`;
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = `correct-${q.id}`;
+    radio.id = radioId;
+    radio.className = 'correct-radio';
+    radio.checked = !!a.isCorrect;
+    radio.addEventListener('change', () => setCorrect(q.id, a.id));
+
+    const radioLabel = document.createElement('label');
+    radioLabel.htmlFor = radioId;
+    radioLabel.className = 'correct-label';
+    radioLabel.innerHTML = `<span class="check-icon">✓</span><span class="label-text">Correct</span>`;
+
+    // Remove answer
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-a-btn';
+    removeBtn.title = 'Remove answer';
+    removeBtn.textContent = '×';
+    removeBtn.disabled = q.answers.length <= MIN_ANSWERS;
+    removeBtn.addEventListener('click', () => removeAnswer(q.id, a.id));
+
+    row.appendChild(dot);
+    row.appendChild(input);
+    row.appendChild(radio);
+    row.appendChild(radioLabel);
+    row.appendChild(removeBtn);
+    list.appendChild(row);
+  });
+
+  card.appendChild(list);
+
+  // Count hint
+  const hint = document.createElement('div');
+  const cnt = q.answers.length;
+  hint.className = 'answer-count-hint' + (cnt >= MAX_ANSWERS ? ' warn' : '');
+  hint.textContent = cnt >= MAX_ANSWERS
+    ? `Maximum ${MAX_ANSWERS} answers reached`
+    : `${cnt} / ${MAX_ANSWERS} answers`;
+  card.appendChild(hint);
+
+  // Add answer button
+  const addABtn = document.createElement('button');
+  addABtn.className = 'add-answer-btn';
+  addABtn.textContent = '＋ Add Answer';
+  addABtn.disabled = q.answers.length >= MAX_ANSWERS;
+  addABtn.addEventListener('click', () => addAnswer(q.id));
+  card.appendChild(addABtn);
+
+  return card;
+}
+
+function updateGlobalButtons() {
+  // nothing global to gate right now; individual buttons handle their own state
+}
+
+// ─── Save ────────────────────────────────────────────────────────────────────
+async function saveQuiz() {
+  const title = document.getElementById('quizTitle').value.trim();
+  const description = document.getElementById('quizDesc').value.trim();
+
+  // ── Client-side validation ──
+  const errs = [];
+  if (!title) errs.push('Quiz title is required.');
+
+  if (questions.length === 0) errs.push('Add at least one question.');
+
+  questions.forEach((q, i) => {
+    const qText = (document.querySelector(`[data-qid="${q.id}"] .input-field`)?.value || q.text || '').trim();
+    q.text = qText; // sync
+    if (!qText) errs.push(`Question ${i + 1}: question text is required.`);
+
+    const answerInputs = document.querySelectorAll(`[data-qid="${q.id}"] .answer-input`);
+    answerInputs.forEach((inp, ai) => { if (q.answers[ai]) q.answers[ai].text = inp.value.trim(); });
+
+    if (q.answers.length < MIN_ANSWERS || q.answers.length > MAX_ANSWERS) {
+      errs.push(`Question ${i + 1}: must have ${MIN_ANSWERS}–${MAX_ANSWERS} answers.`);
+    }
+    if (q.answers.some(a => !a.text)) {
+      errs.push(`Question ${i + 1}: all answers must have text.`);
+    }
+    const correctCount = q.answers.filter(a => a.isCorrect).length;
+    if (correctCount !== 1) {
+      errs.push(`Question ${i + 1}: select exactly one correct answer.`);
+    }
+  });
+
+  if (errs.length) { showToast(errs[0], 'error'); return; }
+
+  // ── Build payload ──
+  const payload = {
+    title,
+    description: description || undefined,
+    questions: questions.map(q => ({
+      question_text: q.text,
+      answers: q.answers.map(a => ({
+        answer_text: a.text,
+        is_correct: !!a.isCorrect,
+      })),
+    })),
+  };
+
+  const saveBtn = document.getElementById('saveBtn');
+  const topBtn  = document.getElementById('topSaveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  topBtn.disabled = true;
+
+  try {
+    const token = localStorage.getItem('token'); // adjust key to match your auth setup
+    const res = await fetch(`${API_BASE}/quizzes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showToast('✅  Quiz saved successfully!', 'success');
+      // Optional: redirect after a moment
+      // setTimeout(() => window.location.href = '/teacher-dashboard.html', 1500);
+    } else {
+      const msg = data.errors?.[0] || data.message || 'Failed to save quiz.';
+      showToast('❌  ' + msg, 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('❌  Network error. Check the server.', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Quiz';
+    topBtn.disabled = false;
+  }
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 3200);
+}
+</script>
+</body>
+</html>

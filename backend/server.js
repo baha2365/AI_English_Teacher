@@ -5,6 +5,7 @@ const { connectDB } = require('./Db');
 const authRoutes    = require('./authRoutes');
 const vocabRoutes   = require('./vocabRoutes');   // ← NEW
 const path = require('path');
+const quizRoutes = require('./quizRoutes');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -32,7 +33,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth',  authRoutes);
-app.use('/api/vocab', vocabRoutes);   // ← NEW
+app.use('/api/vocab', vocabRoutes);
+app.use('/api/quizzes', quizRoutes);
 
 
 app.use(
@@ -60,13 +62,20 @@ app.use((err, _req, res, _next) => {
     await connectDB();
     app.listen(PORT, () => {
       console.log(`🚀  Server running on http://localhost:${PORT}`);
+      
       console.log(`   POST /api/auth/register`);
       console.log(`   POST /api/auth/login`);
       console.log(`   GET  /api/auth/me        (protected)`);
+
       console.log(`   GET  /api/vocab/parts    (protected)`);
       console.log(`   GET  /api/vocab/words/:partId  (protected)`);
       console.log(`   GET  /api/vocab/progress (protected)`);
       console.log(`   POST /api/vocab/progress/complete (protected)`);
+
+      console.log('   POST /api/quizzes         (protected)');
+      console.log('   GET  /api/quizzes         (protected)');
+      console.log('   GET  /api/quizzes/:id     (protected)');
+      console.log('   DELETE /api/quizzes/:id   (protected)');
     });
   } catch (err) {
     console.error('Failed to start server:', err);
