@@ -484,6 +484,15 @@
     document.getElementById('mainContent').style.display  = 'block';
   }
 
+  function teacherDashboard() {
+    const role_id = localStorage.getItem('role_id');
+    if(role_id !== '2') {
+      alert('Access denied: Teacher dashboard is only available to teachers.');
+      return;
+    }
+    window.location.href = 'teachers_section/teacher_dashboard.html';
+  }
+
   async function loadVocabProgress() {
     const token = localStorage.getItem('token');
     try {

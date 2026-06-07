@@ -362,8 +362,9 @@
   // ── After a successful auth response: store JWT only, then redirect ───────────
   // The user object is NOT stored in localStorage — dashboard.html always
   // fetches it fresh from the database via GET /api/auth/me.
-  function saveAndRedirect(token) {
+  function saveAndRedirect(token, roleId) {
     localStorage.setItem('token', token);
+    localStorage.setItem('role_id', roleId);
     window.location.href = 'dashboard.html';
   }
 
@@ -392,7 +393,7 @@
       const data = await res.json();
 
       if (data.success) {
-        saveAndRedirect(data.token);
+        saveAndRedirect(data.token, data.user.roleId);
       } else if (data.errors) {
         const fieldMap = { name: 'regNameErr', email: 'regEmailErr', password: 'regPasswordErr', level: 'regLevelErr' };
         data.errors.forEach(e => { if (fieldMap[e.field]) setError(fieldMap[e.field], e.message); });
@@ -427,7 +428,7 @@
       const data = await res.json();
 
       if (data.success) {
-        saveAndRedirect(data.token);
+        saveAndRedirect(data.token, data.user.roleId);
       } else if (data.errors) {
         const fieldMap = { email: 'loginEmailErr', password: 'loginPasswordErr' };
         data.errors.forEach(e => { if (fieldMap[e.field]) setError(fieldMap[e.field], e.message); });
