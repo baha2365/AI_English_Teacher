@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 /**
  * Middleware that verifies the JWT from the Authorization header.
- * Attaches req.userId on success.
+ * Attaches req.userId and req.userRoleId on success.
  */
 function authenticate(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -13,7 +13,8 @@ function authenticate(req, res, next) {
   const token = authHeader.slice(7); // strip "Bearer "
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = payload.sub;
+    req.userId     = payload.sub;
+    req.userRoleId = payload.roleId;  // set by signToken in authController
     next();
   } catch (err) {
     const message =
