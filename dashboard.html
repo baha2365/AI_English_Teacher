@@ -181,16 +181,142 @@
     }
     .stat-info .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
 
+    /* ══════════════════════════════════════════
+       ── Teacher Dashboard Banner ──
+       Only rendered for role_id === '2'.
+       Hidden by default; JS unhides it.
+    ══════════════════════════════════════════ */
+    #teacher-dashboard-link {
+      display: none; /* hidden until JS confirms teacher role */
+      margin-bottom: 2rem;
+      animation: fadeUp 0.45s ease both;
+    }
+
+    .teacher-banner {
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      padding: 1.6rem 2rem;
+      background: linear-gradient(125deg, #1f1a14 0%, #2c1f0e 50%, #1a160e 100%);
+      border: 1px solid rgba(212,168,83,0.25);
+      box-shadow:
+        0 0 0 1px rgba(212,168,83,0.08) inset,
+        0 8px 32px rgba(0,0,0,0.28),
+        0 2px 8px rgba(196,87,42,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    /* Decorative shimmer line at the top */
+    .teacher-banner::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(212,168,83,0.6) 35%,
+        rgba(196,87,42,0.5) 65%,
+        transparent 100%);
+    }
+
+    /* Radial glow in the background */
+    .teacher-banner::after {
+      content: '';
+      position: absolute;
+      top: -60px; right: -40px;
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,168,83,0.14) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .teacher-banner:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 1px rgba(212,168,83,0.18) inset,
+        0 12px 40px rgba(0,0,0,0.35),
+        0 4px 16px rgba(212,168,83,0.12);
+    }
+    .teacher-banner:active { transform: scale(0.995); }
+
+    /* Left icon badge */
+    .teacher-icon-wrap {
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(212,168,83,0.18), rgba(196,87,42,0.12));
+      border: 1px solid rgba(212,168,83,0.22);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    /* Text block */
+    .teacher-text {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .teacher-eyebrow {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      opacity: 0.75;
+      margin-bottom: 0.3rem;
+    }
+    .teacher-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      color: var(--cream);
+      line-height: 1.25;
+      margin-bottom: 0.3rem;
+    }
+    .teacher-sub {
+      font-size: 0.78rem;
+      color: #8a7e72;
+      line-height: 1.5;
+    }
+
+    /* Pill badge */
+    .teacher-pill {
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .teacher-role-pill {
+      padding: 0.35rem 0.9rem;
+      border-radius: 20px;
+      background: rgba(212,168,83,0.12);
+      border: 1px solid rgba(212,168,83,0.28);
+      font-size: 0.73rem;
+      font-weight: 500;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .teacher-arrow {
+      font-size: 1.2rem;
+      color: rgba(212,168,83,0.4);
+      transition: transform 0.2s, color 0.2s;
+    }
+    .teacher-banner:hover .teacher-arrow {
+      transform: translateX(4px);
+      color: var(--gold);
+    }
+
     /* ── Sections row ── */
     .sections-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-
-    /* ── Card ── */
-    .card {
-      background: var(--card-bg); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.8rem;
-      animation: fadeUp 0.4s ease both;
-    }
-    .card-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 1.2rem; color: var(--ink); }
 
     /* ── Vocab feature card ── */
     .vocab-feature-card {
@@ -282,6 +408,14 @@
       color: #7F77DD;
     }
 
+    /* ── Card ── */
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.8rem;
+      animation: fadeUp 0.4s ease both;
+    }
+    .card-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 1.2rem; color: var(--ink); }
+
     /* ── Lesson items ── */
     .lesson-list { display: flex; flex-direction: column; gap: 0.8rem; }
     .lesson-item {
@@ -322,6 +456,8 @@
       .navbar          { padding: 1rem; }
       .nav-name        { display: none; }
       .vocab-feature-card { flex-wrap: wrap; }
+      .teacher-banner  { flex-wrap: wrap; gap: 1rem; }
+      .teacher-pill    { width: 100%; justify-content: flex-end; }
     }
   </style>
 </head>
@@ -346,8 +482,20 @@
 <!-- Dashboard content -->
 <main class="main" id="mainContent" style="display:none;">
 
+  <!-- ── Teacher Dashboard Banner (hidden for students, shown for teachers) ── -->
   <div id="teacher-dashboard-link">
-    <button onclick="teacherDashboard()">Teacher's Dashboard</button>
+    <div class="teacher-banner" onclick="teacherDashboard()">
+      <div class="teacher-icon-wrap">🎓</div>
+      <div class="teacher-text">
+        <div class="teacher-eyebrow">Instructor Portal</div>
+        <div class="teacher-title">Teacher's Dashboard</div>
+        <div class="teacher-sub">Manage students, track progress &amp; review lesson performance</div>
+      </div>
+      <div class="teacher-pill">
+        <span class="teacher-role-pill">Teacher</span>
+        <span class="teacher-arrow">→</span>
+      </div>
+    </div>
   </div>
 
   <div class="welcome-banner">
@@ -461,6 +609,7 @@
 
   function logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('role_id');
     window.location.href = 'index.html';
   }
 
@@ -480,13 +629,22 @@
     document.getElementById('navAvatar').textContent  = user.name[0].toUpperCase();
     document.getElementById('userLevel').textContent  = user.level;
     document.title = `LinguaAI — ${firstName}'s Dashboard`;
+
+    // ── Role-based visibility ──
+    // Show the teacher banner ONLY if role_id is '2' (teacher).
+    // For any other role (students, admins, unknown) it stays hidden.
+    const roleId = localStorage.getItem('role_id');
+    if (roleId === '2') {
+      document.getElementById('teacher-dashboard-link').style.display = 'block';
+    }
+
     document.getElementById('statusScreen').style.display = 'none';
     document.getElementById('mainContent').style.display  = 'block';
   }
 
   function teacherDashboard() {
-    const role_id = localStorage.getItem('role_id');
-    if(role_id !== '2') {
+    const roleId = localStorage.getItem('role_id');
+    if (roleId !== '2') {
       alert('Access denied: Teacher dashboard is only available to teachers.');
       return;
     }
