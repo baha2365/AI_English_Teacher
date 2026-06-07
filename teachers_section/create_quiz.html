@@ -730,12 +730,22 @@ async function saveQuiz() {
   topBtn.disabled = true;
 
   try {
-    const token = localStorage.getItem('token'); // adjust key to match your auth setup
+    // Try common token key names — update 'authToken' to match whatever your login page uses
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+
+    if (!token) {
+      showToast('❌  You are not logged in.', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Quiz';
+      topBtn.disabled = false;
+      return;
+    }
+
     const res = await fetch(`${API_BASE}/quizzes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
     });
@@ -744,15 +754,19 @@ async function saveQuiz() {
 
     if (res.ok && data.success) {
       showToast('✅  Quiz saved successfully!', 'success');
-      // Optional: redirect after a moment
+      // Optional: redirect after save
       // setTimeout(() => window.location.href = '/teacher-dashboard.html', 1500);
+    } else if (res.status === 403) {
+      showToast('🚫  Access denied. Only teachers and admins can create quizzes.', 'error');
+    } else if (res.status === 401) {
+      showToast('❌  Session expired. Please log in again.', 'error');
     } else {
       const msg = data.errors?.[0] || data.message || 'Failed to save quiz.';
       showToast('❌  ' + msg, 'error');
     }
   } catch (err) {
     console.error(err);
-    showToast('❌  Network error. Check the server.', 'error');
+    showToast('❌  Network error. Is the server running?', 'error');
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save Quiz';

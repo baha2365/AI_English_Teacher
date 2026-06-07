@@ -1,5 +1,6 @@
 const express = require('express');
 const { authenticate } = require('./authMiddleware');
+const { authorizeRole, ROLE_IDS } = require('./roleMiddleware');
 const { pool } = require('./Db');
 
 const router = express.Router();
@@ -62,7 +63,7 @@ function validateQuizPayload(body) {
 //     }
 //   ]
 // }
-router.post('/', async (req, res) => {
+router.post('/', authorizeRole(ROLE_IDS.teacher, ROLE_IDS.admin), async (req, res) => {
   const errors = validateQuizPayload(req.body);
   if (errors.length) {
     return res.status(422).json({ success: false, errors });
@@ -190,7 +191,7 @@ router.get('/:id', async (req, res) => {
 
 // ─── DELETE /api/quizzes/:id ──────────────────────────────────────────────────
 // Delete a quiz (only allowed by the quiz creator).
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authorizeRole(ROLE_IDS.teacher, ROLE_IDS.admin), async (req, res) => {
   const quizId = parseInt(req.params.id, 10);
   if (isNaN(quizId)) {
     return res.status(400).json({ success: false, message: 'Invalid quiz ID.' });
