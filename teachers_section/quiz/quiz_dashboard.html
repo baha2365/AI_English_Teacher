@@ -1,11 +1,599 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quizzz — My Quizzes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple-deep:  #3d1e8e;
+    --purple-dark:  #5a35cc;
+    --purple-mid:   #7c4dff;
+    --purple-bg:    #6c3de0;
+    --yellow:       #ffd740;
+    --yellow-dark:  #e6b800;
+    --green:        #2ecc71;
+    --red:          #e21b3c;
+    --border:       rgba(255,255,255,0.15);
+    --text-main:    #ffffff;
+    --text-muted:   rgba(255,255,255,0.60);
+    --card-bg:      rgba(255,255,255,0.08);
+    --card-hover:   rgba(255,255,255,0.13);
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--purple-dark);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text-main);
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────────────────────── */
+  .header {
+    background: var(--purple-bg);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.28);
+  }
+  .logo { font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -0.5px; flex-shrink: 0; }
+  .logo span { color: var(--yellow); }
+  .header-spacer { flex: 1; }
+  .header-tag {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .create-btn {
+    background: var(--yellow);
+    color: var(--purple-deep);
+    border: none;
+    border-radius: 30px;
+    padding: 9px 20px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.12s, background 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .create-btn:hover  { transform: scale(1.04); background: var(--yellow-dark); }
+  .create-btn:active { transform: scale(0.96); }
+
+  /* ── PAGE ────────────────────────────────────────────────────────────────── */
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  /* ── TITLE ROW ───────────────────────────────────────────────────────────── */
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .page-title {
+    font-size: clamp(22px, 5vw, 30px);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .quiz-count-badge {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-muted);
+    white-space: nowrap;
+    transition: opacity 0.3s;
+  }
+
+  /* ── LOADING ─────────────────────────────────────────────────────────────── */
+  .loading-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 20px;
+    gap: 16px;
+  }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255,255,255,0.15);
+    border-top-color: var(--yellow);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-label { font-size: 14px; font-weight: 700; color: var(--text-muted); }
+
+  /* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 20px;
+    text-align: center;
+    gap: 14px;
+  }
+  .empty-icon { font-size: 56px; line-height: 1; }
+  .empty-title { font-size: 20px; font-weight: 900; color: #fff; }
+  .empty-sub { font-size: 14px; font-weight: 700; color: var(--text-muted); max-width: 280px; line-height: 1.5; }
+  .empty-cta {
+    margin-top: 6px;
+    background: var(--yellow);
+    color: var(--purple-deep);
+    border: none;
+    border-radius: 30px;
+    padding: 12px 32px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.12s, background 0.15s;
+  }
+  .empty-cta:hover  { transform: scale(1.04); background: var(--yellow-dark); }
+  .empty-cta:active { transform: scale(0.96); }
+
+  /* ── QUIZ GRID ───────────────────────────────────────────────────────────── */
+  .quiz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── QUIZ CARD ───────────────────────────────────────────────────────────── */
+  .quiz-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: background 0.18s, transform 0.14s, box-shadow 0.18s;
+    cursor: default;
+  }
+  .quiz-card:hover {
+    background: var(--card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.35;
+    flex: 1;
+    word-break: break-word;
+  }
+  .delete-btn {
+    background: rgba(226,27,60,0.14);
+    border: none;
+    border-radius: 8px;
+    color: #ff6b8a;
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .delete-btn:hover { background: rgba(226,27,60,0.32); }
+  .delete-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .card-desc {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 4px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .q-count-pill {
+    background: rgba(255,215,64,0.15);
+    border: 1px solid rgba(255,215,64,0.25);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--yellow);
+    white-space: nowrap;
+  }
+  .card-date {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── CONFIRM OVERLAY ─────────────────────────────────────────────────────── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(30,10,70,0.72);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+  .confirm-box {
+    background: #4a28b0;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 22px;
+    padding: 28px 28px 24px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    transform: scale(0.92);
+    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .overlay.show .confirm-box { transform: scale(1); }
+  .confirm-icon { font-size: 38px; line-height: 1; margin-bottom: 10px; }
+  .confirm-title { font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+  .confirm-sub { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 22px; line-height: 1.5; }
+  .confirm-actions { display: flex; gap: 10px; }
+  .btn-cancel {
+    flex: 1;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 11px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-cancel:hover { background: rgba(255,255,255,0.18); }
+  .btn-delete-confirm {
+    flex: 1;
+    background: var(--red);
+    border: none;
+    border-radius: 30px;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    padding: 11px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.12s;
+  }
+  .btn-delete-confirm:hover  { background: #c4172f; }
+  .btn-delete-confirm:active { transform: scale(0.96); }
+  .btn-delete-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── TOAST ───────────────────────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--purple-deep);
+    border: 1.5px solid var(--border);
+    border-radius: 40px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    z-index: 999;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+  .toast.show  { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.ok    { border-color: var(--green); color: var(--green); }
+  .toast.err   { border-color: #ff6b8a; color: #ff6b8a; }
+
+  /* ── MOBILE ──────────────────────────────────────────────────────────────── */
+  @media (max-width: 480px) {
+    .page { padding: 22px 14px 50px; }
+    .header { padding: 12px 16px; }
+    .header-tag { display: none; }
+    .quiz-grid { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
-    <button id="quiz_list">My quizzes</button>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">quiz<span>zz</span></div>
+  <div class="header-spacer"></div>
+  <span class="header-tag">Teacher Studio</span>
+  <button class="create-btn" onclick="location.href='create_quiz.html'">＋ Create Quiz</button>
+</header>
+
+<!-- PAGE -->
+<div class="page">
+  <div class="title-row">
+    <h1 class="page-title">My Quizzes</h1>
+    <div class="quiz-count-badge" id="countBadge" style="opacity:0">0 quizzes</div>
+  </div>
+
+  <!-- Dynamic content injected here -->
+  <div id="content"></div>
+</div>
+
+<!-- Delete Confirm Overlay -->
+<div class="overlay" id="overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">Delete this quiz?</div>
+    <div class="confirm-sub" id="confirmSub">This will permanently remove the quiz and all its questions.</div>
+    <div class="confirm-actions">
+      <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-delete-confirm" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = 'http://localhost:3030/api';
+
+let quizzes     = [];        // local cache of loaded quizzes
+let pendingId   = null;      // quiz id waiting for delete confirmation
+let toastTimer  = null;
+
+// ─── Auth helper ─────────────────────────────────────────────────────────────
+function getToken() {
+  return localStorage.getItem('authToken') || localStorage.getItem('token');
+}
+
+function authHeaders() {
+  const token = getToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', loadQuizzes);
+
+// ─── Fetch quizzes from the server ───────────────────────────────────────────
+async function loadQuizzes() {
+  showLoading();
+
+  try {
+    const res  = await fetch(`${API_BASE}/quizzes`, { headers: authHeaders() });
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        showError('Session expired. Please log in again.');
+      } else if (res.status === 403) {
+        showError('Access denied. Teacher account required.');
+      } else {
+        showError(data.message || 'Failed to load quizzes.');
+      }
+      return;
+    }
+
+    quizzes = data.quizzes || [];
+    renderQuizzes();
+  } catch (err) {
+    console.error(err);
+    showError('Network error. Is the server running?');
+  }
+}
+
+// ─── Render quiz grid ─────────────────────────────────────────────────────────
+function renderQuizzes() {
+  const badge = document.getElementById('countBadge');
+  badge.textContent = `${quizzes.length} quiz${quizzes.length !== 1 ? 'zes' : ''}`;
+  badge.style.opacity = '1';
+
+  const content = document.getElementById('content');
+
+  if (quizzes.length === 0) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <div class="empty-title">No quizzes yet</div>
+        <div class="empty-sub">Create your first quiz and your students will be able to take it right away.</div>
+        <button class="empty-cta" onclick="location.href='create_quiz.html'">Create your first quiz</button>
+      </div>`;
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'quiz-grid';
+
+  quizzes.forEach(quiz => {
+    grid.appendChild(buildCard(quiz));
+  });
+
+  content.innerHTML = '';
+  content.appendChild(grid);
+}
+
+// ─── Build a single quiz card ─────────────────────────────────────────────────
+function buildCard(quiz) {
+  const card = document.createElement('div');
+  card.className = 'quiz-card';
+  card.id = `card-${quiz.id}`;
+
+  const top = document.createElement('div');
+  top.className = 'card-top';
+
+  const title = document.createElement('div');
+  title.className = 'card-title';
+  title.textContent = quiz.title;
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'delete-btn';
+  delBtn.title = 'Delete quiz';
+  delBtn.textContent = '🗑';
+  delBtn.addEventListener('click', () => openConfirm(quiz.id, quiz.title));
+
+  top.appendChild(title);
+  top.appendChild(delBtn);
+  card.appendChild(top);
+
+  if (quiz.description) {
+    const desc = document.createElement('div');
+    desc.className = 'card-desc';
+    desc.textContent = quiz.description;
+    card.appendChild(desc);
+  }
+
+  const footer = document.createElement('div');
+  footer.className = 'card-footer';
+
+  const pill = document.createElement('div');
+  pill.className = 'q-count-pill';
+  const qc = quiz.question_count ?? 0;
+  pill.textContent = `${qc} question${qc !== 1 ? 's' : ''}`;
+
+  const date = document.createElement('div');
+  date.className = 'card-date';
+  date.textContent = formatDate(quiz.created_at);
+
+  footer.appendChild(pill);
+  footer.appendChild(date);
+  card.appendChild(footer);
+
+  return card;
+}
+
+// ─── Delete flow ─────────────────────────────────────────────────────────────
+function openConfirm(id, title) {
+  pendingId = id;
+  document.getElementById('confirmSub').textContent =
+    `"${title}" and all its questions will be permanently removed.`;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeConfirm() {
+  pendingId = null;
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('confirmDeleteBtn').disabled = false;
+}
+
+async function confirmDelete() {
+  if (!pendingId) return;
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.disabled = true;
+  btn.textContent = 'Deleting…';
+
+  try {
+    const res  = await fetch(`${API_BASE}/quizzes/${pendingId}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      // Remove from local cache and re-render without a new fetch
+      quizzes = quizzes.filter(q => q.id !== pendingId);
+      closeConfirm();
+      renderQuizzes();
+      showToast('✅  Quiz deleted.', 'ok');
+    } else {
+      closeConfirm();
+      showToast('❌  ' + (data.message || 'Delete failed.'), 'err');
+    }
+  } catch (err) {
+    console.error(err);
+    closeConfirm();
+    showToast('❌  Network error.', 'err');
+  }
+}
+
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+function showLoading() {
+  document.getElementById('content').innerHTML = `
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-label">Loading your quizzes…</div>
+    </div>`;
+}
+
+function showError(msg) {
+  document.getElementById('content').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">⚠️</div>
+      <div class="empty-title">Something went wrong</div>
+      <div class="empty-sub">${msg}</div>
+      <button class="empty-cta" onclick="loadQuizzes()">Try again</button>
+    </div>`;
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+// Close overlay when clicking the backdrop
+document.getElementById('overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+</script>
 </body>
 </html>
