@@ -3,10 +3,10 @@ const express = require('express');
 const cors    = require('cors');
 const { connectDB } = require('./Db');
 const authRoutes    = require('./authRoutes');
-const vocabRoutes   = require('./vocabRoutes');   // ← NEW
+const vocabRoutes   = require('./vocabRoutes');
 const path = require('path');
 const quizRoutes = require('./quizRoutes');
-const courseRoutes = require('./courseRoutes');   // ← ADD (1 of 2)
+const courseRoutes = require('./courseRoutes');
 
 
 const app  = express();
@@ -37,7 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth',  authRoutes);
 app.use('/api/vocab', vocabRoutes);
 app.use('/api/quizzes', quizRoutes);
-app.use('/api/courses', courseRoutes);             // ← ADD (2 of 2)
+app.use('/api/courses', courseRoutes);
 
 
 
