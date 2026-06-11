@@ -879,7 +879,7 @@
     <div class="brand-mark">✦</div>
     Lingua<em>AI</em>
   </a>
-  <a class="nav-back" href="course_dashboard.html">← My Courses</a>
+  <a class="nav-back" href="courses_dashboard.html">← My Courses</a>
 </nav>
 
 <!-- ── PAGE ── -->
@@ -887,7 +887,7 @@
 
   <!-- Breadcrumb -->
   <div class="breadcrumb">
-    <a href="course_dashboard.html">My Courses</a>
+    <a href="courses_dashboard.html">My Courses</a>
     <span class="breadcrumb-sep">/</span>
     <span class="breadcrumb-current" id="breadcrumbName">Loading…</span>
   </div>
@@ -1422,7 +1422,7 @@
     const r = localStorage.getItem('role_id');
     if (!t)        { window.location.href = '../../index.html';         return; }
     if (r !== '2') { window.location.href = '../../dashboard.html';     return; }
-    if (!courseId) { window.location.href = 'course_dashboard.html'; return; }
+    if (!courseId) { window.location.href = './courses_dashboard.html'; return; }
     loadCourse();
     loadClasses();
   })();
