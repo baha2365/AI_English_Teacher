@@ -374,6 +374,16 @@
       letter-spacing: -0.02em;
       line-height: 1.3;
     }
+
+    .course-name a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+    .course-name a:hover {
+      color: var(--gold);
+    }
+
     .badges {
       display: flex;
       align-items: center;
@@ -1201,7 +1211,9 @@
     el.innerHTML = `
       <div class="card-top">
         <div style="flex:1; min-width:0;">
-          <div class="course-name">${escHtml(course.name)}</div>
+          <div class="course-name">
+            <a href="course_details.html?id=${course.id}">${escHtml(course.name)}</a>
+          </div>
           <div class="badges">
             <span class="badge badge-level">${escHtml(course.level)}</span>
             ${activeBadge}
@@ -1222,6 +1234,9 @@
       </div>
 
       <div class="card-actions">
+        <a class="btn-ghost-sm" href="course_details.html?id=${course.id}" style="text-decoration:none;">
+          ↗ View course
+        </a>
         <button class="btn-ghost-sm" onclick="toggleActive('${course.id}', ${course.is_active}, this)">
           ${course.is_active ? '⏸ Deactivate' : '▶ Activate'}
         </button>
