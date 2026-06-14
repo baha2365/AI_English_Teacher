@@ -459,18 +459,6 @@ $fileInput.addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-document.getElementById('upload-zone').addEventListener('click', () => $fileInput.click());
-
-document.getElementById('btn-use-url').addEventListener('click', () => {
-  const url = $urlInput.value.trim();
-  if (!url) { showToast('Please enter a URL', 'error'); return; }
-  loadImage(url);
-  $urlInput.value = '';
-  showToast('Image loaded!', 'success');
-});
-
-$urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-use-url').click(); });
-
 /* ════════════════════════════════════════
    WORD BANK POSITION
 ════════════════════════════════════════ */
@@ -760,9 +748,6 @@ document.getElementById('btn-copy-json').addEventListener('click', () => {
    INIT
 ════════════════════════════════════════ */
 $hint.classList.add('hidden');
-['lion', 'tiger', 'elephant', 'giraffe'].forEach(w => {
-  state.words.push({ id: state.nextWordId++, text: w, assigned: false });
-});
 renderWordBankAll();
 $canvas.addEventListener('dragover', e => e.preventDefault());
 document.addEventListener('dragover', e => e.preventDefault());
