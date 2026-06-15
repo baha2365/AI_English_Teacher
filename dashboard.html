@@ -587,10 +587,10 @@
   </div>
 
 </main>
-
+<script src="/config.js"></script>
 <script>
-  const API   = 'https://ravine-decrease-staleness.ngrok-free.dev/api/auth';
-  const VOCAB = 'https://ravine-decrease-staleness.ngrok-free.dev/api/vocab';
+  const API   = LINGUA.auth;
+  const VOCAB = LINGUA.vocab;
 
   function logout() {
     localStorage.removeItem('token');

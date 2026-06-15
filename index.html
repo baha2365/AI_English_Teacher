@@ -422,9 +422,9 @@
     </div>
   </div>
 </div>
-
+<script src="/config.js"></script>
 <script>
-  const API = 'https://ravine-decrease-staleness.ngrok-free.dev/api/auth';
+  const API = LINGUA.auth;
 
   if (localStorage.getItem('token')) {
     window.location.href = 'dashboard.html';

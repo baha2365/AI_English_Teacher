@@ -39,7 +39,11 @@ app.use('/api/vocab', vocabRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/courses', courseRoutes);
 
+app.use(express.static(path.join(__dirname, "..")));
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "landing_page.html"));
+});
 
 app.use(
   '/uploads',
