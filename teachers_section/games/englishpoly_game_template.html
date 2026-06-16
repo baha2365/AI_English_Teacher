@@ -498,73 +498,46 @@
 // ════════════════════════════════════════
 //  GAME DATA
 // ════════════════════════════════════════
-const CHALLENGES = {
-  vocabulary: [
-    { type:'match', title:'Animal Match!', prompt:'Match each animal to its correct description:',
-      pairs:[{left:'🐶 Dog',right:"Man's best friend"},{left:'🐱 Cat',right:'Loves to purr'},{left:'🐘 Elephant',right:'Never forgets'},{left:'🦁 Lion',right:'King of the jungle'}] },
-    { type:'choice', title:'What does it mean?', prompt:'What is the meaning of "ENORMOUS"?',
-      choices:['Very small','Very fast','Very large','Very loud'], answer:2 },
-    { type:'choice', title:'Opposite Words', prompt:'What is the opposite of "ANCIENT"?',
-      choices:['Old','Modern','Slow','Dark'], answer:1 },
-    { type:'match', title:'Food Vocabulary!', prompt:'Match the food to its category:',
-      pairs:[{left:'🍎 Apple',right:'Fruit'},{left:'🥕 Carrot',right:'Vegetable'},{left:'🍞 Bread',right:'Grain'},{left:'🧀 Cheese',right:'Dairy'}] },
-    { type:'choice', title:'School Vocabulary', prompt:'Which word means "a person who teaches"?',
-      choices:['Student','Doctor','Teacher','Pilot'], answer:2 },
-  ],
-  spelling: [
-    { type:'scramble', title:'Unscramble the Word!', prompt:'Unscramble the letters to make an animal:',
-      scrambled:['T','A','R','R','O','P'], answer:'PARROT' },
-    { type:'scramble', title:'Unscramble the Word!', prompt:'Unscramble the letters to make a fruit:',
-      scrambled:['A','N','A','N','B','A'], answer:'BANANA' },
-    { type:'scramble', title:'Unscramble the Word!', prompt:'Arrange these letters to make a body part:',
-      scrambled:['H','D','U','S','O','L','E','R'], answer:'SHOULDER' },
-    { type:'blank', title:'Fill in the Missing Letters!', prompt:'Complete the word: EL_ _PHANT',
-      answer:'ELEPHANT', hint:"It's a huge grey animal!" },
-    { type:'blank', title:'Spell it Right!', prompt:'How do you spell the colour? _ _ _ _ _ _ (starts with P, a mix of red & blue)',
-      answer:'PURPLE', hint:'A colour mixed from red and blue' },
-  ],
-  grammar: [
-    { type:'choice', title:'Choose the Correct Verb!', prompt:'She ___ to school every day.',
-      choices:['go','goes','going','goed'], answer:1 },
-    { type:'choice', title:'Past or Present?', prompt:'Yesterday I ___ a movie.',
-      choices:['watch','watches','watched','watching'], answer:2 },
-    { type:'blank', title:'Fill in the Blank!', prompt:'Complete: "There ___ (be) two cats in the garden."',
-      answer:'ARE', hint:'Two cats = plural!' },
-    { type:'choice', title:'Correct Article', prompt:'I saw ___ elephant at the zoo.',
-      choices:['a','an','the','—'], answer:1 },
-    { type:'choice', title:'Plurals!', prompt:'What is the plural of "child"?',
-      choices:['childs','children','childrens','child'], answer:1 },
-  ],
-  speaking: [
-    { type:'action', title:'Speaking Challenge!', icon:'🗣️',
-      description:'Describe your bedroom in 3 sentences. Use: "In my room there is/are..."', points:3 },
-    { type:'action', title:'Tell the Group!', icon:'⭐',
-      description:'Say 5 things you can see in this room right now!', points:2 },
-    { type:'action', title:'Make a Question!', icon:'❓',
-      description:'Ask the person on your left a question using "How often do you...?"', points:2 },
-    { type:'action', title:'Introduce Yourself!', icon:'👋',
-      description:'Say: your name, age, favourite colour, and one hobby — all in English!', points:3 },
-  ],
-  sentences: [
-    { type:'sentence', title:'Build the Sentence!', prompt:'Arrange the words to make a correct sentence:',
-      words:['every','She','morning','breakfast','eats'], answer:'She eats breakfast every morning' },
-    { type:'sentence', title:'Put it in Order!', prompt:'Build a correct sentence from these words:',
-      words:['does','He','football','play','not'], answer:'He does not play football' },
-    { type:'sentence', title:'Make a Sentence!', prompt:'Arrange these words correctly:',
-      words:['birthday','When','your','is','?'], answer:'When is your birthday ?' },
-    { type:'sentence', title:'Put it Together!', prompt:'Build the correct question:',
-      words:['you','Can','English','speak','?'], answer:'Can you speak English ?' },
-  ],
-  matching: [
-    { type:'match', title:'Match the Opposites!', prompt:'Match each word to its opposite:',
-      pairs:[{left:'Hot',right:'Cold'},{left:'Big',right:'Small'},{left:'Happy',right:'Sad'},{left:'Fast',right:'Slow'}] },
-    { type:'match', title:'Match: Number & Word!', prompt:'Match the number to the word:',
-      pairs:[{left:'1',right:'One'},{left:'5',right:'Five'},{left:'10',right:'Ten'},{left:'20',right:'Twenty'}] },
-    { type:'match', title:'Jobs & Places!', prompt:'Match the job to its workplace:',
-      pairs:[{left:'Doctor',right:'Hospital'},{left:'Teacher',right:'School'},{left:'Chef',right:'Restaurant'},{left:'Pilot',right:'Airport'}] },
-  ],
-};
+// ────────────────────────────────────────────────────────────────
+//  ✏️ TEACHER-EDITABLE: PICTURE QUESTIONS
+//  This is the list of picture-based questions students get when they
+//  land on a ❓ or ❗ square. To add, remove, or change a question:
+//    1. "image"    → paste a link to any picture (or leave it as '' for
+//                    a text-only question with no picture)
+//    2. "question" → type the question students should answer out loud
+//  You can add as many entries as you like by copying a line and
+//  changing the text — nothing else on this page needs to change.
+// ────────────────────────────────────────────────────────────────
+const PICTURE_CHALLENGES = [
+  { image: 'https://picsum.photos/seed/englishpoly-park/640/420',
+    question: 'Describe this picture. Use at least 3 sentences.' },
+  { image: 'https://picsum.photos/seed/englishpoly-market/640/420',
+    question: 'What is happening in this picture?' },
+  { image: 'https://picsum.photos/seed/englishpoly-kitchen/640/420',
+    question: 'Name 5 things you can see in this picture.' },
+  { image: 'https://picsum.photos/seed/englishpoly-beach/640/420',
+    question: 'How do you think the people in this picture feel? Why?' },
+  { image: 'https://picsum.photos/seed/englishpoly-city/640/420',
+    question: 'Imagine you are in this picture. What would you do next?' },
+  { image: 'https://picsum.photos/seed/englishpoly-forest/640/420',
+    question: 'Make up a short story about this picture.' },
+  { image: 'https://picsum.photos/seed/englishpoly-animals/640/420',
+    question: 'Describe the colours and shapes you see in this picture.' },
+  { image: 'https://picsum.photos/seed/englishpoly-school/640/420',
+    question: 'Where do you think this picture was taken? Why?' },
+];
 
+// ────────────────────────────────────────────────────────────────
+//  ✏️ TEACHER-EDITABLE: BOARD SQUARES
+//  Each square below is one space on the board. For a "question" square
+//  you can change the "label" text to whatever question you want
+//  students to answer, and you can optionally add a picture by adding
+//  an "image" line (a link to a picture) right under the label — for
+//  example: image:'https://picsum.photos/seed/myphoto/640/420'.
+//  Leave "image" out completely if you don't want a picture on that
+//  square. Don't change "type" or "color" — those control how the
+//  square looks and behaves on the board.
+// ────────────────────────────────────────────────────────────────
 const BOARD_CELLS = [
   {id:0,  type:'start',    color:''},
   {id:1,  label:'What is your favourite fruit?',     type:'question', color:'red'},
@@ -958,6 +931,7 @@ async function movePlayer(steps) {
   if (p.pos >= maxPos) {
     p.score += 5;
     renderPlayers();
+    checkWin();
     showToast('🎉 ' + p.name + ' reached FINISH!');
     setTimeout(() => openSpecialEvent('finish', p), 500);
     return;
@@ -984,12 +958,14 @@ function onLand(posIdx) {
     p.score += 2;
     showToast('⭐ BONUS! +2 points for ' + p.name + '!');
     renderPlayers();
+    checkWin();
     setTimeout(() => openSpecialEvent('bonus', p), 300);
     return;
   }
   if (cell.type === 'finish') {
     p.score += 5;
     renderPlayers();
+    checkWin();
     setTimeout(() => openSpecialEvent('finish', p), 300);
     return;
   }
@@ -1002,7 +978,7 @@ function onLand(posIdx) {
   }
   if (cell.type === 'wild' || cell.type === 'exclaim') {
     awaitingChallenge = true;
-    setTimeout(() => openChallenge('random', 'blue'), 300);
+    setTimeout(() => openPictureChallenge(), 300);
     return;
   }
   setTimeout(() => endTurn(), 300);
@@ -1026,10 +1002,15 @@ function openSpeakingCard(cell) {
   const content = document.getElementById('challengeContent');
   const theme   = COLOR_BG[cell.color] || COLOR_BG.blue;
 
+  const imageHtml = cell.image
+    ? `<img src="${cell.image}" alt="" style="width:100%;border-radius:14px;margin-bottom:14px;max-height:260px;object-fit:cover;display:block;">`
+    : '';
+
   content.innerHTML = `
     <div style="text-align:center;margin-bottom:14px;">
       <div class="modal-badge" style="background:${theme.accent};color:white;">${theme.label} — Speaking</div>
     </div>
+    ${imageHtml}
     <div style="background:${theme.bg};border-radius:16px;padding:24px 20px;text-align:center;margin-bottom:18px;border:2px solid ${theme.accent}22;">
       <h2 style="font-family:'Fredoka One',cursive;font-size:1.45rem;color:#1a1a2e;margin-bottom:0;">${cell.label}</h2>
     </div>
@@ -1045,6 +1026,7 @@ function speakingDone(correct) {
     players[currentPlayer].score += 1;
     renderPlayers();
     showToast('🗣️ +1 point for ' + players[currentPlayer].name + '!');
+    checkWin();
   }
   document.getElementById('challengeModal').classList.remove('show');
   awaitingChallenge = false;
@@ -1052,228 +1034,34 @@ function speakingDone(correct) {
 }
 
 // ════════════════════════════════════════
-//  CHALLENGES
+//  ❓ / ❗ PICTURE CHALLENGE CARD
+//  Shown when a player lands on a question-mark or exclamation-mark
+//  square. Picks a random entry from PICTURE_CHALLENGES above and shows
+//  it the same simple way as a regular question: a picture (if any),
+//  the question text, and a teacher-judged Good answer / Skip choice.
 // ════════════════════════════════════════
-function openChallenge(type, colorHint) {
-  let pool;
-  if(type === 'random') {
-    const keys = Object.keys(CHALLENGES);
-    pool = CHALLENGES[keys[Math.floor(Math.random() * keys.length)]];
-    colorHint = 'blue';
-  } else {
-    const map = {red:'vocabulary',yellow:'spelling',green:'grammar',blue:'speaking',purple:'sentences',brown:'matching',orange:'vocabulary'};
-    pool = CHALLENGES[map[colorHint] || 'vocabulary'];
-  }
-  const ch = pool[Math.floor(Math.random() * pool.length)];
-  challengeQueue = ch;
-  renderChallenge(ch, colorHint);
-}
-
-const COLOR_NAMES = {red:'#e03232',yellow:'#e6a800',green:'#2e9e4f',blue:'#2574c0',purple:'#8b35b0',brown:'#8B5E3C',orange:'#e07820'};
-const TYPE_LABELS = {vocabulary:'Vocabulary',spelling:'Spelling',grammar:'Grammar',speaking:'Speaking',sentences:'Sentence Builder',matching:'Matching',random:'Wild Challenge'};
-
-function renderChallenge(ch, colorHint) {
+function openPictureChallenge() {
+  const item    = PICTURE_CHALLENGES[Math.floor(Math.random() * PICTURE_CHALLENGES.length)];
   const modal   = document.getElementById('challengeModal');
   const content = document.getElementById('challengeContent');
-  const color   = COLOR_NAMES[colorHint] || '#2574c0';
-  const typeLabel = TYPE_LABELS[colorHint] || 'Challenge';
 
-  let html = `<div class="modal-badge" style="background:${color};color:white;">${typeLabel}</div>`;
-  html += `<h2>${ch.title}</h2>`;
+  const imageHtml = item.image
+    ? `<img src="${item.image}" alt="" style="width:100%;border-radius:14px;margin-bottom:14px;max-height:280px;object-fit:cover;display:block;">`
+    : '';
 
-  if(ch.type === 'scramble')  html += renderScramble(ch);
-  else if(ch.type === 'sentence') html += renderSentence(ch);
-  else if(ch.type === 'match')    html += renderMatch(ch);
-  else if(ch.type === 'blank')    html += renderBlank(ch);
-  else if(ch.type === 'choice')   html += renderChoice(ch);
-  else if(ch.type === 'action')   html += renderAction(ch);
-
-  html += `<div class="feedback" id="challengeFeedback"></div>`;
-  html += `<div class="modal-actions">`;
-  if(ch.type !== 'action') html += `<button class="btn-check" onclick="checkAnswer()">✅ Check</button>`;
-  html += `<button class="btn-skip" onclick="skipChallenge()">⏭ Skip (−1 pt)</button>`;
-  html += `<button class="btn-close" onclick="closeChallenge()">✖ Close</button>`;
-  html += `</div>`;
-
-  content.innerHTML = html;
-  modal.classList.add('show');
-
-  if(ch.type === 'scramble')  initScrambleDrag();
-  if(ch.type === 'sentence')  initSentenceBuild();
-}
-
-function renderScramble(ch) {
-  const shuffled = [...ch.scrambled].sort(() => Math.random() - 0.5);
-  const tiles = shuffled.map((l,i) => `<div class="letter-tile" draggable="true" data-letter="${l}" id="tile${i}">${l}</div>`).join('');
-  const slots = ch.answer.split('').map((_,i) => `<div class="answer-slot" data-slot="${i}" id="slot${i}"></div>`).join('');
-  return `<p class="prompt">${ch.prompt}</p><div class="scramble-area" id="tilesArea">${tiles}</div><p style="font-size:0.8rem;color:#888;margin-bottom:6px;">↓ Drop letters here in order:</p><div class="answer-slots" id="slotsArea">${slots}</div>`;
-}
-
-function renderSentence(ch) {
-  const shuffled = [...ch.words].sort(() => Math.random() - 0.5);
-  const chips = shuffled.map((w,i) => `<div class="word-chip" data-word="${w}" data-idx="${i}" onclick="pickWord(this)">${w}</div>`).join('');
-  return `<p class="prompt">${ch.prompt}</p><div class="sentence-words" id="wordBank">${chips}</div><p style="font-size:0.8rem;color:#888;margin-bottom:6px;">↓ Your sentence:</p><div class="sentence-target" id="sentenceTarget"></div>`;
-}
-
-function renderMatch(ch) {
-  const shuffledRight = [...ch.pairs].map(p => p.right).sort(() => Math.random() - 0.5);
-  const leftCols  = ch.pairs.map((p,i) => `<div class="match-item left"  data-idx="${i}"  onclick="selectMatch('left',this)">${p.left}</div>`).join('');
-  const rightCols = shuffledRight.map((r,i) => `<div class="match-item right" data-ridx="${i}" data-val="${r}" onclick="selectMatch('right',this)">${r}</div>`).join('');
-  return `<p class="prompt">${ch.prompt}</p><div class="match-grid"><div class="match-col" id="leftCol">${leftCols}</div><div class="match-col" id="rightCol">${rightCols}</div></div>`;
-}
-
-function renderBlank(ch) {
-  return `<p class="prompt">${ch.prompt}</p><p style="font-size:0.78rem;color:#888;margin-bottom:6px;">Hint: ${ch.hint}</p><input type="text" class="blank-input" id="blankInput" placeholder="Type your answer..." onkeydown="if(event.key==='Enter')checkAnswer()" autocomplete="off">`;
-}
-
-function renderChoice(ch) {
-  const choices = ch.choices.map((c,i) => `<button class="choice-btn" data-idx="${i}" onclick="selectChoice(this,${i})">${c}</button>`).join('');
-  return `<p class="prompt">${ch.prompt}</p><div class="choices" id="choicesArea">${choices}</div>`;
-}
-
-function renderAction(ch) {
-  return `<div class="event-icon">${ch.icon}</div><div class="event-title">${ch.title}</div><div class="event-desc">${ch.description}</div>
-    <div class="modal-actions">
-      <button class="btn-check" onclick="completeAction(${ch.points})">✅ Done! (+${ch.points} pts)</button>
-      <button class="btn-skip" onclick="skipChallenge()">⏭ Skip (−1 pt)</button>
+  content.innerHTML = `
+    <div style="text-align:center;margin-bottom:14px;">
+      <div class="modal-badge" style="background:var(--purple);color:white;">Picture Question</div>
+    </div>
+    ${imageHtml}
+    <div style="background:#f0e0ff;border-radius:16px;padding:22px 20px;text-align:center;margin-bottom:18px;border:2px solid #8b35b022;">
+      <h2 style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#1a1a2e;margin-bottom:0;">${item.question}</h2>
+    </div>
+    <div class="modal-actions" style="justify-content:center;gap:12px;">
+      <button class="btn-check" onclick="speakingDone(true)"  style="background:var(--purple);box-shadow:0 3px 0 #5b21b6;">✅ Good answer! (+1 pt)</button>
+      <button class="btn-skip"  onclick="speakingDone(false)">😅 Skip turn</button>
     </div>`;
-}
-
-// ─── Drag & Drop (Scramble) ───
-let dragSrc = null;
-function initScrambleDrag() {
-  document.querySelectorAll('.letter-tile').forEach(tile => {
-    tile.addEventListener('dragstart', e => { dragSrc = tile; tile.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-    tile.addEventListener('dragend', () => tile.classList.remove('dragging'));
-  });
-  document.querySelectorAll('.answer-slot').forEach(slot => {
-    slot.addEventListener('dragover',  e => { e.preventDefault(); slot.classList.add('dragover'); });
-    slot.addEventListener('dragleave', () => slot.classList.remove('dragover'));
-    slot.addEventListener('drop', e => {
-      e.preventDefault(); slot.classList.remove('dragover');
-      if(!dragSrc) return;
-      if(slot.textContent.trim()) {
-        const old = slot.textContent.trim();
-        slot.textContent = dragSrc.textContent; slot.classList.add('filled');
-        dragSrc.textContent = old;
-      } else {
-        slot.textContent = dragSrc.textContent; slot.classList.add('filled');
-        dragSrc.textContent = '';
-      }
-      dragSrc = null;
-    });
-    slot.addEventListener('dblclick', () => { slot.textContent = ''; slot.classList.remove('filled'); });
-  });
-}
-
-// ─── Sentence Building ───
-let builtSentence = [];
-function initSentenceBuild() { builtSentence = []; }
-function pickWord(el) {
-  if(el.classList.contains('used')) return;
-  builtSentence.push(el.dataset.word);
-  el.classList.add('used');
-  const chip = document.createElement('div');
-  chip.className = 'word-placed'; chip.textContent = el.dataset.word;
-  chip.onclick = () => {
-    builtSentence = builtSentence.filter((w,i,a) => !(i === a.lastIndexOf(el.dataset.word)));
-    chip.remove(); el.classList.remove('used');
-  };
-  document.getElementById('sentenceTarget').appendChild(chip);
-}
-
-// ─── Matching ───
-let matchLeft = null, matchRight = null, matchedPairs = 0;
-function selectMatch(side, el) {
-  if(el.classList.contains('correct')) return;
-  if(side === 'left') {
-    document.querySelectorAll('.match-item.left.selected').forEach(e => e.classList.remove('selected'));
-    matchLeft = el; el.classList.add('selected');
-  } else {
-    document.querySelectorAll('.match-item.right.selected').forEach(e => e.classList.remove('selected'));
-    matchRight = el; el.classList.add('selected');
-  }
-  if(matchLeft && matchRight) {
-    const ch = challengeQueue;
-    const leftItem = ch.pairs[parseInt(matchLeft.dataset.idx)];
-    if(leftItem.right === matchRight.dataset.val) {
-      matchLeft.classList.remove('selected'); matchLeft.classList.add('correct');
-      matchRight.classList.remove('selected'); matchRight.classList.add('correct');
-      matchedPairs++;
-      if(matchedPairs >= ch.pairs.length) setTimeout(() => { showFeedback(true,'Perfect match! +2 points 🎉'); awardPoints(2); }, 200);
-    } else {
-      matchLeft.classList.add('wrong'); matchRight.classList.add('wrong');
-      setTimeout(() => { matchLeft.classList.remove('wrong','selected'); matchRight.classList.remove('wrong','selected'); }, 700);
-    }
-    matchLeft = null; matchRight = null;
-  }
-}
-
-// ─── Choice ───
-let choiceSelected = null;
-function selectChoice(el, idx) {
-  document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected'); choiceSelected = idx;
-}
-
-// ─── Check Answer ───
-function checkAnswer() {
-  const ch = challengeQueue;
-  if(!ch) return;
-
-  if(ch.type === 'scramble') {
-    const built = [...document.querySelectorAll('.answer-slot')].map(s => s.textContent.trim()).join('');
-    if(built.toUpperCase() === ch.answer.toUpperCase()) { showFeedback(true,'✅ Correct! +2 points!'); awardPoints(2); }
-    else showFeedback(false,`❌ Not quite! The answer is: ${ch.answer}`);
-  }
-  else if(ch.type === 'sentence') {
-    const built = builtSentence.join(' ');
-    if(built.toLowerCase() === ch.answer.toLowerCase()) { showFeedback(true,'✅ Perfect sentence! +2 points!'); awardPoints(2); }
-    else showFeedback(false,`❌ Try again! Correct: "${ch.answer}"`);
-  }
-  else if(ch.type === 'blank') {
-    const val   = document.getElementById('blankInput').value.trim();
-    const input = document.getElementById('blankInput');
-    if(val.toUpperCase() === ch.answer.toUpperCase()) { input.classList.add('correct'); showFeedback(true,'✅ Correct! +2 points!'); awardPoints(2); }
-    else { input.classList.add('wrong'); showFeedback(false,`❌ Answer: ${ch.answer}`); }
-  }
-  else if(ch.type === 'choice') {
-    if(choiceSelected === null) { showToast('Pick an answer first!'); return; }
-    const btns = document.querySelectorAll('.choice-btn');
-    btns[ch.answer].classList.add('correct');
-    if(choiceSelected === ch.answer) { showFeedback(true,'✅ Correct! +2 points!'); awardPoints(2); }
-    else { btns[choiceSelected].classList.add('wrong'); showFeedback(false,`❌ Wrong! Correct: ${ch.choices[ch.answer]}`); }
-    btns.forEach(b => b.onclick = null);
-  }
-  else if(ch.type === 'match') {
-    if(matchedPairs < ch.pairs.length) showFeedback(false,'❌ Match all pairs first!');
-  }
-}
-
-function completeAction(pts) { showFeedback(true,`✅ Great job! +${pts} points!`); awardPoints(pts); }
-
-function awardPoints(n) {
-  players[currentPlayer].score += n;
-  renderPlayers(); checkWin();
-  setTimeout(() => closeChallenge(), 1800);
-}
-
-function showFeedback(correct, msg) {
-  const fb = document.getElementById('challengeFeedback');
-  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
-  fb.textContent = msg;
-}
-
-function skipChallenge() {
-  players[currentPlayer].score = Math.max(0, players[currentPlayer].score - 1);
-  renderPlayers(); closeChallenge();
-}
-
-function closeChallenge() {
-  document.getElementById('challengeModal').classList.remove('show');
-  awaitingChallenge = false; challengeQueue = null;
-  matchLeft = null; matchRight = null; matchedPairs = 0; choiceSelected = null;
-  endTurn();
+  modal.classList.add('show');
 }
 
 // ─── Special Events ───
