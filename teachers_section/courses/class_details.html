@@ -460,9 +460,6 @@
   </div>
 </div>
 
-
-<!-- Socket.io client -->
-<script src="http://localhost:3030/socket.io/socket.io.js"></script>
 <script src="../../config.js"></script>
 <script>
 /* ══════════════════════════════════════
@@ -573,20 +570,29 @@ document.getElementById('endGameBtn').addEventListener('click', async () => {
    SOCKET — listen for game_started / game_ended
    so the banner updates if teacher opens game from another tab
 ══════════════════════════════════════ */
-try {
-  const socket = io('http://localhost:3030', { transports: ['websocket','polling'] });
-  socket.on('connect', () => {
-    // Join the class room as observer
-    socket.emit('join_game', { classId, token: token() });
-  });
-  socket.on('game_started', () => { checkActiveGame(); });
-  socket.on('game_ended',   () => { setGameBannerIdle(); });
-  socket.on('game_state',   ({ session }) => {
-    if (session && session.status !== 'ended' && !activeSession) {
-      setGameBannerActive(session);
-    }
-  });
-} catch(e) { /* socket.io not loaded — game banner still works via REST */ }
+/* ══════════════════════════════════════
+   SOCKET — dynamic load so it respects config base URL
+══════════════════════════════════════ */
+const socketScript = document.createElement('script');
+socketScript.src = `${LINGUA.base}/socket.io/socket.io.js`;
+document.head.appendChild(socketScript);
+
+socketScript.onload = () => {
+  try {
+    const socket = io(LINGUA.base, { transports: ['websocket', 'polling'] });
+
+    socket.on('connect', () => {
+      socket.emit('join_game', { classId, token: token() });
+    });
+    socket.on('game_started', () => { checkActiveGame(); });
+    socket.on('game_ended',   () => { setGameBannerIdle(); });
+    socket.on('game_state',   ({ session }) => {
+      if (session && session.status !== 'ended' && !activeSession) {
+        setGameBannerActive(session);
+      }
+    });
+  } catch(e) { /* socket.io not available — game banner still works via REST */ }
+};
 
 /* ══════════════════════════════════════
    FEEDBACK
