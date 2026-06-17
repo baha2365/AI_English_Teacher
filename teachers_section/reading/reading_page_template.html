@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📖 My Wonderful Family — Reading Task</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Tokens ── */
+    :root {
+      --cream:       #fdf8f0;
+      --ruled:       #e8e0d2;
+      --ink:         #2d2416;
+      --ink-soft:    #6b5d4a;
+      --sky:         #4a90d9;
+      --sky-light:   #d6eaf8;
+      --mint:        #3bb58a;
+      --mint-light:  #d4f5ea;
+      --coral:       #e05c4b;
+      --coral-light: #fde8e5;
+      --amber:       #f5a623;
+      --amber-light: #fef3dc;
+      --pencil:      #c8b89a;
+      --shadow:      rgba(45,36,22,0.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #e9e2d5;
+      background-image:
+        linear-gradient(#d6cfc2 1px, transparent 1px);
+      background-size: 100% 32px;
+      min-height: 100vh;
+      padding: 40px 16px 60px;
+      color: var(--ink);
+    }
+
+    /* ── Page container ── */
+    .page {
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Card base ── */
+    .card {
+      background: var(--cream);
+      border-radius: 16px;
+      box-shadow: 0 4px 18px var(--shadow), 0 1px 3px var(--shadow);
+      overflow: hidden;
+    }
+
+    /* ── Header card ── */
+    .header-card {
+      background: linear-gradient(135deg, #4a90d9 0%, #2c6fad 100%);
+      padding: 32px 36px 28px;
+      position: relative;
+    }
+    .header-card::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 28px;
+      background: var(--cream);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .header-eyebrow {
+      font-family: 'Caveat', cursive;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #a8d4f5;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .header-title {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.15;
+    }
+    .header-title span { color: #fde68a; }
+
+    /* ── Passage card ── */
+    .passage-card { padding: 32px 36px; }
+    .passage-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--sky);
+      margin-bottom: 18px;
+    }
+    .passage-label::before {
+      content: '';
+      display: block;
+      width: 28px; height: 3px;
+      background: var(--sky);
+      border-radius: 2px;
+    }
+    .passage-body {
+      font-size: 1.05rem;
+      line-height: 1.9;
+      color: var(--ink);
+    }
+    .passage-body p { margin-bottom: 14px; }
+    .passage-body p:last-child { margin-bottom: 0; }
+
+    /* ── Questions card ── */
+    .questions-card { padding: 32px 36px; }
+    .questions-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--coral);
+      margin-bottom: 24px;
+    }
+    .questions-label::before {
+      content: '';
+      display: block;
+      width: 28px; height: 3px;
+      background: var(--coral);
+      border-radius: 2px;
+    }
+
+    /* ── Question block ── */
+    .question-block {
+      margin-bottom: 28px;
+      padding-bottom: 28px;
+      border-bottom: 1.5px dashed var(--ruled);
+    }
+    .question-block:last-of-type {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .question-text {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .q-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px; height: 28px;
+      background: var(--amber);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.85rem;
+      font-weight: 900;
+      flex-shrink: 0;
+      margin-top: -1px;
+    }
+
+    /* ── Answer options grid ── */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .option {
+      position: relative;
+      cursor: pointer;
+    }
+    .option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0; height: 0;
+    }
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 2px solid var(--ruled);
+      background: #faf7f2;
+      cursor: pointer;
+      transition: border-color 0.18s, background 0.18s, transform 0.12s;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--ink-soft);
+      user-select: none;
+    }
+    .option-label:hover {
+      border-color: var(--sky);
+      background: var(--sky-light);
+      color: var(--ink);
+      transform: translateY(-1px);
+    }
+    .option input:checked + .option-label {
+      border-color: var(--sky);
+      background: var(--sky-light);
+      color: var(--sky);
+    }
+    .option-letter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      background: var(--pencil);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 900;
+      flex-shrink: 0;
+      transition: background 0.18s;
+    }
+    .option input:checked + .option-label .option-letter {
+      background: var(--sky);
+    }
+
+    /* ── Reveal states ── */
+    .option.revealed-correct input:checked + .option-label,
+    .option.revealed-correct .option-label.correct-answer {
+      border-color: var(--mint);
+      background: var(--mint-light);
+      color: var(--mint);
+    }
+    .option.revealed-correct input:checked + .option-label .option-letter,
+    .option.revealed-correct .option-label.correct-answer .option-letter {
+      background: var(--mint);
+    }
+    .option.revealed-wrong input:checked + .option-label {
+      border-color: var(--coral);
+      background: var(--coral-light);
+      color: var(--coral);
+    }
+    .option.revealed-wrong input:checked + .option-label .option-letter {
+      background: var(--coral);
+    }
+    /* Highlight the correct answer when wrong was chosen */
+    .option.show-correct .option-label {
+      border-color: var(--mint);
+      background: var(--mint-light);
+      color: var(--mint);
+    }
+    .option.show-correct .option-label .option-letter {
+      background: var(--mint);
+    }
+
+    /* ── Feedback badge ── */
+    .feedback-badge {
+      display: none;
+      margin-top: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      align-items: center;
+      gap: 6px;
+    }
+    .feedback-badge.show { display: flex; }
+    .feedback-badge.correct { color: var(--mint); }
+    .feedback-badge.wrong   { color: var(--coral); }
+
+    /* ── Confirm button ── */
+    .confirm-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-top: 32px;
+    }
+    .btn-confirm {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 44px;
+      background: linear-gradient(135deg, #4a90d9, #2c6fad);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(44,111,173,0.35);
+      transition: transform 0.14s, box-shadow 0.14s;
+      letter-spacing: 0.3px;
+    }
+    .btn-confirm:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 20px rgba(44,111,173,0.40);
+    }
+    .btn-confirm:active { transform: translateY(0); }
+    .btn-confirm:disabled {
+      background: #b0c4d8;
+      box-shadow: none;
+      cursor: default;
+      transform: none;
+    }
+
+    .unanswered-msg {
+      display: none;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--coral);
+      text-align: center;
+    }
+    .unanswered-msg.show { display: block; }
+
+    /* ── Score banner ── */
+    .score-banner {
+      display: none;
+      border-radius: 14px;
+      padding: 22px 28px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      margin-top: 4px;
+    }
+    .score-banner.show { display: block; }
+    .score-banner.great  { background: var(--mint-light);  color: var(--mint);  }
+    .score-banner.good   { background: var(--amber-light); color: #b07d0a; }
+    .score-banner.tryagain { background: var(--coral-light); color: var(--coral); }
+    .score-num {
+      font-family: 'Caveat', cursive;
+      font-size: 2.8rem;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .btn-retry {
+      display: none;
+      margin-top: 4px;
+      padding: 11px 32px;
+      background: none;
+      border: 2px solid var(--ink-soft);
+      border-radius: 50px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-retry:hover { background: var(--ink-soft); color: #fff; }
+    .btn-retry.show { display: inline-block; }
+
+    /* Disable option clicks after reveal */
+    .options-locked .option { pointer-events: none; }
+
+    @media (max-width: 540px) {
+      .header-card, .passage-card, .questions-card { padding: 24px 20px; }
+      .options-grid { grid-template-columns: 1fr; }
+      .header-title { font-size: 1.55rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="card header-card">
+    <div class="header-eyebrow">📖 English Reading Task</div>
+    <div class="header-title">My <span>Wonderful</span> Family</div>
+  </div>
+
+  <!-- Passage -->
+  <div class="card passage-card">
+    <div class="passage-label">Reading Passage</div>
+    <div class="passage-body">
+      <p>Hi! My name is Sam. I am 12 years old. I live with my family in a small house. My family is very kind and happy.</p>
+      <p>My father is a teacher. He works at a school. My mother is a nurse. She works at a hospital. I have one sister and one brother. My sister is 10 years old, and my brother is 6 years old.</p>
+      <p>We like to spend time together. On weekends, we often watch movies or go to the park. Sometimes we cook dinner together. I love my family very much.</p>
+    </div>
+  </div>
+
+  <!-- Questions -->
+  <div class="card questions-card">
+    <div class="questions-label">❓ Questions</div>
+
+    <!-- Q1 -->
+    <div class="question-block" id="qblock-1">
+      <div class="question-text">
+        <span class="q-num">1</span>
+        How old is Sam?
+      </div>
+      <div class="options-grid" id="opts-1">
+        <label class="option"><input type="radio" name="q1" value="A"><span class="option-label"><span class="option-letter">A</span>10 years old</span></label>
+        <label class="option"><input type="radio" name="q1" value="B"><span class="option-label"><span class="option-letter">B</span>11 years old</span></label>
+        <label class="option"><input type="radio" name="q1" value="C"><span class="option-label"><span class="option-letter">C</span>12 years old</span></label>
+        <label class="option"><input type="radio" name="q1" value="D"><span class="option-label"><span class="option-letter">D</span>13 years old</span></label>
+      </div>
+      <div class="feedback-badge" id="fb-1"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="question-block" id="qblock-2">
+      <div class="question-text">
+        <span class="q-num">2</span>
+        What is Sam's father's job?
+      </div>
+      <div class="options-grid" id="opts-2">
+        <label class="option"><input type="radio" name="q2" value="A"><span class="option-label"><span class="option-letter">A</span>Doctor</span></label>
+        <label class="option"><input type="radio" name="q2" value="B"><span class="option-label"><span class="option-letter">B</span>Teacher</span></label>
+        <label class="option"><input type="radio" name="q2" value="C"><span class="option-label"><span class="option-letter">C</span>Engineer</span></label>
+        <label class="option"><input type="radio" name="q2" value="D"><span class="option-label"><span class="option-letter">D</span>Driver</span></label>
+      </div>
+      <div class="feedback-badge" id="fb-2"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="question-block" id="qblock-3">
+      <div class="question-text">
+        <span class="q-num">3</span>
+        Where does Sam's mother work?
+      </div>
+      <div class="options-grid" id="opts-3">
+        <label class="option"><input type="radio" name="q3" value="A"><span class="option-label"><span class="option-letter">A</span>School</span></label>
+        <label class="option"><input type="radio" name="q3" value="B"><span class="option-label"><span class="option-letter">B</span>Bank</span></label>
+        <label class="option"><input type="radio" name="q3" value="C"><span class="option-label"><span class="option-letter">C</span>Hospital</span></label>
+        <label class="option"><input type="radio" name="q3" value="D"><span class="option-label"><span class="option-letter">D</span>Shop</span></label>
+      </div>
+      <div class="feedback-badge" id="fb-3"></div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="question-block" id="qblock-4">
+      <div class="question-text">
+        <span class="q-num">4</span>
+        How many siblings does Sam have?
+      </div>
+      <div class="options-grid" id="opts-4">
+        <label class="option"><input type="radio" name="q4" value="A"><span class="option-label"><span class="option-letter">A</span>1 sibling</span></label>
+        <label class="option"><input type="radio" name="q4" value="B"><span class="option-label"><span class="option-letter">B</span>2 siblings</span></label>
+        <label class="option"><input type="radio" name="q4" value="C"><span class="option-label"><span class="option-letter">C</span>3 siblings</span></label>
+        <label class="option"><input type="radio" name="q4" value="D"><span class="option-label"><span class="option-letter">D</span>4 siblings</span></label>
+      </div>
+      <div class="feedback-badge" id="fb-4"></div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="question-block" id="qblock-5">
+      <div class="question-text">
+        <span class="q-num">5</span>
+        What do they often do on weekends?
+      </div>
+      <div class="options-grid" id="opts-5">
+        <label class="option"><input type="radio" name="q5" value="A"><span class="option-label"><span class="option-letter">A</span>Go to school</span></label>
+        <label class="option"><input type="radio" name="q5" value="B"><span class="option-label"><span class="option-letter">B</span>Watch movies or go to the park</span></label>
+        <label class="option"><input type="radio" name="q5" value="C"><span class="option-label"><span class="option-letter">C</span>Travel to other countries</span></label>
+        <label class="option"><input type="radio" name="q5" value="D"><span class="option-label"><span class="option-letter">D</span>Work in the garden</span></label>
+      </div>
+      <div class="feedback-badge" id="fb-5"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="confirm-wrap">
+      <div class="unanswered-msg" id="unanswered-msg">⚠️ Please answer all 5 questions before confirming.</div>
+      <button class="btn-confirm" id="btn-confirm" onclick="checkAnswers()">
+        ✅ Check My Answers
+      </button>
+      <div class="score-banner" id="score-banner"></div>
+      <button class="btn-retry" id="btn-retry" onclick="resetQuiz()">🔄 Try Again</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const CORRECT = { q1: 'C', q2: 'B', q3: 'C', q4: 'B', q5: 'B' };
+  const FEEDBACK = {
+    q1: { correct: 'Correct! Sam is 12 years old.', wrong: 'Not quite. The text says Sam is 12 years old.' },
+    q2: { correct: 'Correct! Sam\'s father is a teacher.', wrong: 'Not quite. The text says his father is a teacher.' },
+    q3: { correct: 'Correct! Sam\'s mother works at a hospital.', wrong: 'Not quite. The text says she works at a hospital.' },
+    q4: { correct: 'Correct! Sam has 2 siblings — one sister and one brother.', wrong: 'Not quite. Sam has one sister and one brother = 2 siblings.' },
+    q5: { correct: 'Correct! They often watch movies or go to the park.', wrong: 'Not quite. The text says they watch movies or go to the park.' },
+  };
+
+  function checkAnswers() {
+    const msgEl = document.getElementById('unanswered-msg');
+    msgEl.classList.remove('show');
+
+    // Check all answered
+    for (let i = 1; i <= 5; i++) {
+      const selected = document.querySelector(`input[name="q${i}"]:checked`);
+      if (!selected) {
+        msgEl.classList.add('show');
+        document.getElementById(`qblock-${i}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+
+    let score = 0;
+    for (let i = 1; i <= 5; i++) {
+      const qKey = `q${i}`;
+      const selected = document.querySelector(`input[name="${qKey}"]:checked`).value;
+      const correct = CORRECT[qKey];
+      const optsEl = document.getElementById(`opts-${i}`);
+      const fbEl = document.getElementById(`fb-${i}`);
+      const allOptions = optsEl.querySelectorAll('.option');
+
+      // Lock options
+      optsEl.classList.add('options-locked');
+
+      if (selected === correct) {
+        score++;
+        // Find selected option and mark correct
+        allOptions.forEach(opt => {
+          const radio = opt.querySelector('input');
+          if (radio.value === selected) opt.classList.add('revealed-correct');
+        });
+        fbEl.innerHTML = '✅ ' + FEEDBACK[qKey].correct;
+        fbEl.className = 'feedback-badge show correct';
+      } else {
+        // Mark selected as wrong
+        allOptions.forEach(opt => {
+          const radio = opt.querySelector('input');
+          if (radio.value === selected) opt.classList.add('revealed-wrong');
+          if (radio.value === correct)  opt.classList.add('show-correct');
+        });
+        fbEl.innerHTML = '❌ ' + FEEDBACK[qKey].wrong;
+        fbEl.className = 'feedback-badge show wrong';
+      }
+    }
+
+    // Show score
+    const banner = document.getElementById('score-banner');
+    const retry = document.getElementById('btn-retry');
+    const btn = document.getElementById('btn-confirm');
+    btn.disabled = true;
+
+    let cls, msg;
+    if (score === 5) {
+      cls = 'great';
+      msg = '🎉 Amazing work! You got everything right!';
+    } else if (score >= 3) {
+      cls = 'good';
+      msg = '👍 Good job! Keep reading and you\'ll get them all!';
+    } else {
+      cls = 'tryagain';
+      msg = '💪 Keep trying! Read the passage again carefully.';
+    }
+
+    banner.innerHTML = `<span class="score-num">${score} / 5</span>${msg}`;
+    banner.className = `score-banner show ${cls}`;
+    retry.classList.add('show');
+
+    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function resetQuiz() {
+    // Clear all radios
+    document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+
+    // Remove all state classes
+    document.querySelectorAll('.option').forEach(opt => {
+      opt.classList.remove('revealed-correct', 'revealed-wrong', 'show-correct');
+    });
+    document.querySelectorAll('.options-grid').forEach(g => g.classList.remove('options-locked'));
+
+    // Hide feedback
+    document.querySelectorAll('.feedback-badge').forEach(fb => {
+      fb.className = 'feedback-badge';
+      fb.innerHTML = '';
+    });
+
+    // Reset buttons/banner
+    document.getElementById('score-banner').className = 'score-banner';
+    document.getElementById('btn-retry').classList.remove('show');
+    document.getElementById('btn-confirm').disabled = false;
+    document.getElementById('unanswered-msg').classList.remove('show');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
