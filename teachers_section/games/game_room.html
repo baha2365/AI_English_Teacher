@@ -408,12 +408,13 @@
 
 <!-- Socket.io -->
 <script src="/socket.io/socket.io.js"></script>
+<script src="../../config.js"></script>
 
 <script>
 // ═══════════════════════════════════════════════════════════
 //  CONFIG & URL SETUP
 // ═══════════════════════════════════════════════════════════
-const API_BASE  = 'http://localhost:3030';
+const API_BASE  = LINGUA.base;
 const token     = localStorage.getItem('token');
 const roleId    = localStorage.getItem('role_id');
 const isTeacher = roleId === '2';

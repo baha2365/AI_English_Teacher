@@ -518,11 +518,13 @@
 <!-- Socket.io client (served from the same Express server) -->
 <script src="http://localhost:3030/socket.io/socket.io.js"></script>
 
+<script src="./config.js"></script>
+
 <script>
 /* ══════════════════════════════════════
    CONFIG
 ══════════════════════════════════════ */
-const API_BASE = 'http://localhost:3030';
+const API_BASE = LINGUA.base;
 const API      = `${API_BASE}/api/student`;
 const AUTH_API = `${API_BASE}/api/auth`;
 const GAME_API = `${API_BASE}/api/game`;

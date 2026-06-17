@@ -1055,12 +1055,12 @@
   </div>
 </div>
 
-
+<script src="../../config.js"></script>
 <script>
   /* ══════════════════════════════════════
      CONFIG
   ══════════════════════════════════════ */
-  const COURSES_BASE = 'http://localhost:3030/api/courses';
+  const COURSES_BASE = LINGUA.courses;
   const token  = () => localStorage.getItem('token');
   const authH  = (extra = {}) => ({
     'Content-Type': 'application/json',

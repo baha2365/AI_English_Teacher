@@ -463,13 +463,13 @@
 
 <!-- Socket.io client -->
 <script src="http://localhost:3030/socket.io/socket.io.js"></script>
-
+<script src="../../config.js"></script>
 <script>
 /* ══════════════════════════════════════
    CONFIG
 ══════════════════════════════════════ */
-const API       = 'http://localhost:3030/api/courses';
-const GAME_API  = 'http://localhost:3030/api/game';
+const API       = LINGUA.courses;
+const GAME_API  = LINGUA.game;
 const token     = () => localStorage.getItem('token');
 const authH     = (extra = {}) => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${token()}`, ...extra });
 
