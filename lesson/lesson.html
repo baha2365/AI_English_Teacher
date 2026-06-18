@@ -309,7 +309,7 @@
   <a href="../dashboard.html" class="nav-brand">Lingua<span>AI</span></a>
   <div class="nav-right">
     <div class="nav-avatar" id="navAvatar">…</div>
-    <a href="../dashboard.html" class="btn-back">← Dashboard</a>
+    <a href="parts_select.html" class="btn-back">← Parts</a>
   </div>
 </nav>
 
@@ -408,6 +408,12 @@
   const token = localStorage.getItem('token');
 
   if (!token) { window.location.href = 'index.html'; }
+
+  // If the user came from the parts-chooser, this tells us exactly which
+  // part to open first. If it's missing (e.g. direct link, refresh), we
+  // fall back to the old behaviour of resuming at the first incomplete part.
+  const urlParams      = new URLSearchParams(window.location.search);
+  const requestedPartId = urlParams.get('part_id') ? parseInt(urlParams.get('part_id'), 10) : null;
 
   let user           = null;
   let parts          = [];
@@ -576,8 +582,11 @@
   }
 
   function updateProgress() {
+    // Counted against THIS user's full part list — completedParts comes from
+    // /progress (global for the user) but every part in it already belongs
+    // to this same list, since a user only ever has one level's worth of parts.
     const total = parts.length;
-    const done  = completedParts.size;
+    const done  = parts.filter(p => completedParts.has(p.id)).length;
     const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
     document.getElementById('progressFill').style.width = pct + '%';
     document.getElementById('progressCount').innerHTML  = `${done}<span>/ ${total} parts</span>`;
@@ -606,8 +615,17 @@
 
       updateProgress();
 
-      const firstIncomplete = parts.findIndex(p => !completedParts.has(p.id));
-      currentPartIdx = firstIncomplete >= 0 ? firstIncomplete : 0;
+      // Prefer the part explicitly requested from the chooser; otherwise
+      // resume wherever the user left off.
+      let startIdx = -1;
+      if (requestedPartId !== null) {
+        startIdx = parts.findIndex(p => p.id === requestedPartId);
+      }
+      if (startIdx < 0) {
+        const firstIncomplete = parts.findIndex(p => !completedParts.has(p.id));
+        startIdx = firstIncomplete >= 0 ? firstIncomplete : 0;
+      }
+      currentPartIdx = startIdx;
 
       document.getElementById('statusScreen').style.display = 'none';
       document.getElementById('mainContent').style.display  = 'block';

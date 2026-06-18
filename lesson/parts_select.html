@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LinguaAI — Choose a Part</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:    #F5F0E8; --ink: #1A1612; --rust: #C4572A;
+      --sage:     #4A6741; --gold: #D4A853; --muted: #7A6E65;
+      --border:   #DDD5C8; --card-bg: #FDFAF5; --input-bg: #F9F5EE;
+    }
+
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
+
+    /* ── Navbar ── */
+    .navbar { background: var(--ink); padding: 1rem 2.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-brand { font-family: 'Playfair Display', serif; color: var(--cream); font-size: 1.3rem; letter-spacing: -0.02em; text-decoration: none; }
+    .nav-brand span { color: var(--gold); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-avatar { width: 38px; height: 38px; background: var(--rust); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.95rem; }
+    .btn-back { background: none; border: 1px solid rgba(255,255,255,0.2); color: #9A9089; padding: 0.4rem 1rem; border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .btn-back:hover { border-color: rgba(255,255,255,0.5); color: var(--cream); }
+
+    .main { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+    /* ── Page header ── */
+    .page-header { margin-bottom: 1.8rem; text-align: center; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 3vw, 2.1rem); color: var(--ink); margin-bottom: 0.4rem; }
+    .page-header h1 em { color: var(--rust); font-style: italic; }
+    .page-header p { font-size: 0.88rem; color: var(--muted); }
+
+    /* ── Overall progress card (sticky so it's visible while scrolling 33 parts) ── */
+    .progress-wrap {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.2rem 1.5rem; margin-bottom: 2.2rem; display: flex; align-items: center; gap: 1.2rem;
+      position: sticky; top: 78px; z-index: 50; box-shadow: 0 4px 16px rgba(26,22,18,0.06);
+    }
+    .progress-info { flex: 1; }
+    .progress-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+    .progress-bar-bg { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--rust); border-radius: 3px; transition: width 0.5s ease; width: 0%; }
+    .progress-count { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--ink); white-space: nowrap; }
+    .progress-count span { font-size: 0.78rem; font-family: 'DM Sans', sans-serif; color: var(--muted); display: block; text-align: center; }
+
+    .jump-current {
+      flex-shrink: 0; background: var(--ink); color: var(--cream); border: none; border-radius: 8px;
+      padding: 0.5rem 0.9rem; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: opacity 0.2s;
+    }
+    .jump-current:hover { opacity: 0.85; }
+
+    /* ── Status screen ── */
+    .status-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; gap: 1rem; color: var(--muted); font-size: 0.9rem; }
+    .spinner { width: 28px; height: 28px; border: 2.5px solid var(--border); border-top-color: var(--rust); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-retry { padding: 0.5rem 1.4rem; background: var(--ink); color: var(--cream); border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 3rem 1.5rem; color: var(--muted); font-size: 0.9rem; }
+    .empty-state .empty-icon { font-size: 2rem; margin-bottom: 0.8rem; display: block; }
+
+    /* ══════════════════════════════════════════
+       The path: one winding trail with a node for
+       every part. Fully data-driven — 4 parts or
+       40 parts render the exact same way.
+    ══════════════════════════════════════════ */
+    .path-wrap { position: relative; }
+    .path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+    .path-svg path { fill: none; stroke: var(--border); stroke-width: 4; stroke-dasharray: 2 14; stroke-linecap: round; }
+
+    .part-track { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 1.7rem; padding: 0.5rem 0; }
+
+    .part-node { display: flex; align-items: center; gap: 1rem; animation: fadeUp 0.35s ease both; }
+    .part-node:nth-child(odd)  { flex-direction: row; }
+    .part-node:nth-child(even) { flex-direction: row-reverse; }
+    .part-node:nth-child(even) .node-info { text-align: right; }
+    .part-node:nth-child(even) .node-meta { justify-content: flex-end; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .node-btn {
+      flex-shrink: 0; width: 58px; height: 58px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700;
+      border: 3px solid var(--card-bg);
+      cursor: pointer; transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .node-btn:active:not(:disabled) { transform: scale(0.92); }
+
+    .part-node.is-completed .node-btn { background: var(--sage); color: white; box-shadow: 0 3px 12px rgba(74,103,65,0.3); }
+    .part-node.is-completed .node-btn:hover { box-shadow: 0 5px 16px rgba(74,103,65,0.45); transform: translateY(-2px); }
+
+    .part-node.is-current .node-btn { background: var(--rust); color: white; box-shadow: 0 3px 14px rgba(196,87,42,0.4); animation: pulseRust 2.2s ease-in-out infinite; }
+    .part-node.is-current .node-btn:hover { transform: translateY(-2px); animation: none; box-shadow: 0 5px 18px rgba(196,87,42,0.55); }
+    @keyframes pulseRust { 0%,100% { box-shadow: 0 3px 14px rgba(196,87,42,0.4); } 50% { box-shadow: 0 3px 22px rgba(196,87,42,0.7); } }
+
+    .part-node.is-locked .node-btn { background: var(--input-bg); color: var(--muted); border-color: var(--border); cursor: not-allowed; box-shadow: none; font-size: 1rem; }
+
+    .node-info { flex: 1; min-width: 0; }
+    .node-eyebrow { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.15rem; }
+    .part-node.is-current   .node-eyebrow { color: var(--rust); }
+    .part-node.is-completed .node-eyebrow { color: var(--sage); }
+    .node-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--ink); }
+    .part-node.is-locked .node-title { color: var(--muted); }
+    .node-meta { font-size: 0.74rem; color: var(--muted); display: flex; align-items: center; gap: 0.4rem; margin-top: 0.2rem; }
+
+    @media (max-width: 480px) {
+      .navbar { padding: 1rem; }
+      .progress-wrap { top: 66px; }
+      .part-node, .part-node:nth-child(even) { flex-direction: row; }
+      .part-node:nth-child(even) .node-info,
+      .part-node:nth-child(even) .node-meta { text-align: left; justify-content: flex-start; }
+      .node-btn { width: 50px; height: 50px; font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="../dashboard.html" class="nav-brand">Lingua<span>AI</span></a>
+  <div class="nav-right">
+    <div class="nav-avatar" id="navAvatar">…</div>
+    <a href="../dashboard.html" class="btn-back">← Dashboard</a>
+  </div>
+</nav>
+
+<div class="status-screen" id="statusScreen">
+  <div class="spinner"></div>
+  <span>Loading your parts…</span>
+</div>
+
+<main class="main" id="mainContent" style="display:none;">
+  <div class="page-header">
+    <h1>Choose a <em>Part</em></h1>
+    <p>Work through the parts in order — finish one to unlock the next.</p>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <div class="progress-label">Your progress</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+    </div>
+    <div class="progress-count" id="progressCount">0<span>/ 0 parts</span></div>
+    <button class="jump-current" id="jumpCurrentBtn">Jump to current</button>
+  </div>
+
+  <div class="path-wrap">
+    <svg class="path-svg" id="pathSvg" preserveAspectRatio="none"></svg>
+    <div class="part-track" id="partTrack"></div>
+  </div>
+</main>
+
+<script src="../config.js"></script>
+<script>
+  const API   = LINGUA.auth;
+  const VOCAB = LINGUA.vocab;
+  const token = localStorage.getItem('token');
+  if (!token) { window.location.href = 'index.html'; }
+
+  let currentNodeEl = null;
+
+  function showError(message) {
+    document.getElementById('statusScreen').innerHTML = `
+      <span style="font-size:2rem">⚠️</span>
+      <span>${message}</span>
+      <button class="btn-retry" onclick="init()">Try again</button>
+    `;
+    document.getElementById('statusScreen').style.display = 'flex';
+    document.getElementById('mainContent').style.display  = 'none';
+  }
+
+  // A part is locked until the part before it has been completed. The first
+  // part not yet finished becomes "current"; everything after that is locked.
+  // This recomputes from scratch every load, so adding part #34 to the DB
+  // just slots a new node onto the end automatically.
+  function computeStatuses(parts, completedSet) {
+    let chainOpen = true;
+    return parts.map((p) => {
+      const isComplete = completedSet.has(p.id);
+      let status;
+      if (!chainOpen) {
+        status = 'locked';
+      } else if (isComplete) {
+        status = 'completed';
+      } else {
+        status = 'current';
+        chainOpen = false;
+      }
+      return { ...p, status };
+    });
+  }
+
+  function renderParts(parts) {
+    const track = document.getElementById('partTrack');
+    track.innerHTML = '';
+    currentNodeEl = null;
+
+    if (!parts.length) {
+      track.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">📭</span>
+          No parts have been added yet — check back soon!
+        </div>`;
+      document.getElementById('pathSvg').innerHTML = '';
+      return;
+    }
+
+    parts.forEach((part) => {
+      const node = document.createElement('div');
+      node.className = `part-node is-${part.status}`;
+
+      const icon    = part.status === 'completed' ? '✓' : part.status === 'locked' ? '🔒' : part.part_number;
+      const eyebrow = part.status === 'completed' ? 'Completed'
+                    : part.status === 'locked'    ? 'Locked'
+                    : 'Continue here';
+      const meta    = part.status === 'locked' ? 'Finish the previous part to unlock' : '3 words · sentence practice';
+
+      node.innerHTML = `
+        <button class="node-btn" ${part.status === 'locked' ? 'disabled title="Finish the previous part to unlock"' : ''}>
+          <span>${icon}</span>
+        </button>
+        <div class="node-info">
+          <div class="node-eyebrow">${eyebrow}</div>
+          <div class="node-title">Part ${part.part_number}</div>
+          <div class="node-meta">${meta}</div>
+        </div>
+      `;
+
+      if (part.status !== 'locked') {
+        node.style.cursor = 'pointer';
+        node.addEventListener('click', () => {
+          window.location.href = `lesson.html?part_id=${part.id}`;
+        });
+      }
+
+      if (part.status === 'current') currentNodeEl = node;
+
+      track.appendChild(node);
+    });
+
+    drawPath(parts.length);
+  }
+
+  // Purely decorative winding line threading the nodes together.
+  function drawPath(count) {
+    const svg  = document.getElementById('pathSvg');
+    const wrap = document.querySelector('.path-wrap');
+    if (count < 2) { svg.innerHTML = ''; return; }
+
+    const height = wrap.offsetHeight;
+    const width  = wrap.offsetWidth;
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+    const cx   = 29;
+    const step = height / count;
+    let d = `M ${cx} 29`;
+    for (let i = 1; i < count; i++) {
+      const y    = step * i + 29;
+      const sway = (i % 2 === 0) ? cx + 8 : cx - 8;
+      d += ` Q ${sway} ${y - step / 2}, ${cx} ${y}`;
+    }
+    svg.innerHTML = `<path d="${d}"></path>`;
+  }
+
+  function updateProgress(parts, completedSet) {
+    const total = parts.length;
+    const done  = parts.filter(p => completedSet.has(p.id)).length;
+    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressCount').innerHTML  = `${done}<span>/ ${total} parts</span>`;
+  }
+
+  async function init() {
+    document.getElementById('statusScreen').innerHTML = `<div class="spinner"></div><span>Loading your parts…</span>`;
+    document.getElementById('statusScreen').style.display = 'flex';
+    document.getElementById('mainContent').style.display  = 'none';
+
+    try {
+      const res  = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok || !data.success) { window.location.href = 'index.html'; return; }
+      document.getElementById('navAvatar').textContent = data.user.name[0].toUpperCase();
+
+      const [pRes, prRes] = await Promise.all([
+        fetch(`${VOCAB}/parts`,    { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${VOCAB}/progress`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      const pData  = await pRes.json();
+      const prData = await prRes.json();
+      if (!pData.success)  throw new Error(pData.message  || 'Could not load parts.');
+      if (!prData.success) throw new Error(prData.message || 'Could not load progress.');
+
+      const completedSet = new Set(prData.completed);
+      const parts = computeStatuses(pData.parts, completedSet);
+
+      updateProgress(parts, completedSet);
+      renderParts(parts);
+
+      document.getElementById('statusScreen').style.display = 'none';
+      document.getElementById('mainContent').style.display  = 'block';
+
+      document.getElementById('jumpCurrentBtn').onclick = () => {
+        if (currentNodeEl) currentNodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+
+      // Land on the current part without scrolling through everything already done.
+      if (currentNodeEl) {
+        setTimeout(() => currentNodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
+      }
+    } catch (err) {
+      console.error(err);
+      showError(err.message || 'Could not load your parts. Is the server running?');
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
