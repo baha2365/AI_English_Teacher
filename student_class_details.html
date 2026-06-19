@@ -617,11 +617,6 @@ const API      = `${API_BASE}/api/student`;
 const AUTH_API = `${API_BASE}/api/auth`;
 const GAME_API = `${API_BASE}/api/game`;
 
-const READING_TASKS_URL = `${API}/classes/${classId}/reading-tasks`;
-// NOTE: adjust this if your reading pages live in a different folder
-const READING_PLAY_PATH = 'teachers_section/reading/reading_play.html';
-let exposedReadingTasks = [];
-
 const token    = () => localStorage.getItem('token');
 const authH    = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${token()}` });
 
@@ -631,6 +626,11 @@ const classId = params.get('id');
 const CLASS_URL      = `${API}/classes/${classId}`;
 const CLASSMATES_URL = `${API}/classes/${classId}/classmates`;
 const GAME_SESSION_URL = `${GAME_API}/classes/${classId}/session`;
+
+const READING_TASKS_URL = `${API}/classes/${classId}/reading-tasks`;
+// NOTE: adjust this if your reading pages live in a different folder
+const READING_PLAY_PATH = 'teachers_section/reading/reading_play.html';
+let exposedReadingTasks = [];
 
 let currentUserId = null;
 let gameRoomUrl   = null;
