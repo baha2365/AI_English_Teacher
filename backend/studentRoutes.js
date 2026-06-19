@@ -119,4 +119,35 @@ router.get('/classes/:id/classmates', authenticate, authorizeRole(ROLE_IDS.stude
   }
 });
 
+// ─── GET /api/student/classes/:id/reading-tasks ───────────────────────────────
+// List reading tasks exposed to a class — only if the student is enrolled.
+router.get('/classes/:id/reading-tasks', authenticate, authorizeRole(ROLE_IDS.student), async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows: enrolled } = await pool.query(
+      `SELECT 1 FROM class_enrollments WHERE class_id = $1 AND student_id = $2`,
+      [id, req.userId]
+    );
+    if (!enrolled.length) {
+      return res.status(403).json({ success: false, message: 'You are not enrolled in this class.' });
+    }
+
+    const { rows } = await pool.query(
+      `SELECT rt.id, rt.title, rt.level, cra.assigned_at,
+              COUNT(rq.id)::int AS question_count
+         FROM class_reading_assignments cra
+         JOIN reading_tasks rt ON rt.id = cra.task_id
+         LEFT JOIN reading_questions rq ON rq.task_id = rt.id
+        WHERE cra.class_id = $1
+        GROUP BY rt.id, cra.assigned_at
+        ORDER BY cra.assigned_at DESC`,
+      [id]
+    );
+    return res.json({ success: true, tasks: rows });
+  } catch (err) {
+    console.error('List class reading tasks (student) error:', err);
+    return res.status(500).json({ success: false, message: 'Could not fetch reading tasks.' });
+  }
+});
+
 module.exports = router;
