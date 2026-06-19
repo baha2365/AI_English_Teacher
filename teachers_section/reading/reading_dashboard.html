@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading Dashboard — LinguaAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --purple:       #7c3aed;
+      --purple-dark:  #5b21b6;
+      --purple-light: #ede9fe;
+      --purple-mid:   #a78bfa;
+      --yellow:       #f5a623;
+      --yellow-light: #fef3dc;
+      --cream:        #faf8ff;
+      --ink:          #1e1b2e;
+      --ink-soft:     #6b5fa0;
+      --border:       #ddd6fe;
+      --bg:           #f0ebff;
+      --white:        #ffffff;
+      --mint:         #10b981;
+      --mint-light:   #d1fae5;
+      --coral:        #ef4444;
+      --coral-light:  #fee2e2;
+      --amber:        #f59e0b;
+      --amber-light:  #fef3c7;
+      --shadow-sm:    0 2px 8px rgba(124,58,237,0.10);
+      --shadow-md:    0 4px 20px rgba(124,58,237,0.15);
+      --radius:       14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+    .topbar { background: var(--white); border-bottom: 2px solid var(--border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .topbar-logo { font-family: 'Caveat', cursive; font-size: 1.6rem; font-weight: 700; color: var(--purple); text-decoration: none; }
+    .topbar-logo span { color: var(--yellow); }
+    .topbar-nav { display: flex; align-items: center; gap: 10px; }
+    .btn-nav { padding: 8px 18px; border-radius: 8px; font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700; cursor: pointer; border: none; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .btn-nav.outline { background: none; border: 2px solid var(--border); color: var(--ink-soft); }
+    .btn-nav.outline:hover { border-color: var(--purple); color: var(--purple); }
+
+    .page-header { background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%); padding: 40px 32px 36px; color: #fff; }
+    .page-header-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .page-eyebrow { font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--purple-mid); margin-bottom: 8px; }
+    .page-title { font-size: 1.9rem; font-weight: 900; line-height: 1.15; }
+    .page-title span { color: var(--yellow); }
+    .page-subtitle { margin-top: 8px; font-size: 0.95rem; color: rgba(255,255,255,0.72); }
+    .btn-create { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; background: var(--yellow); color: var(--ink); border: none; border-radius: 50px; font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 900; cursor: pointer; box-shadow: 0 4px 14px rgba(245,166,35,0.40); transition: transform 0.14s, box-shadow 0.14s; white-space: nowrap; text-decoration: none; }
+    .btn-create:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,166,35,0.50); }
+
+    .stats-strip { background: var(--white); border-bottom: 2px solid var(--border); padding: 16px 32px; }
+    .stats-inner { max-width: 960px; margin: 0 auto; display: flex; gap: 32px; flex-wrap: wrap; }
+    .stat-item { display: flex; align-items: center; gap: 10px; }
+    .stat-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .stat-icon.purple { background: var(--purple-light); }
+    .stat-icon.yellow { background: var(--yellow-light); }
+    .stat-icon.mint   { background: var(--mint-light); }
+    .stat-label { font-size: 0.78rem; font-weight: 700; color: var(--ink-soft); }
+    .stat-value { font-size: 1.15rem; font-weight: 900; color: var(--ink); }
+
+    .main { max-width: 960px; margin: 0 auto; padding: 28px 16px 60px; }
+
+    .filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); font-size: 0.95rem; pointer-events: none; }
+    .search-input { width: 100%; padding: 10px 14px 10px 36px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito', sans-serif; font-size: 0.92rem; font-weight: 600; color: var(--ink); background: var(--white); outline: none; transition: border-color 0.18s; }
+    .search-input:focus { border-color: var(--purple); }
+    .filter-select { padding: 10px 14px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700; color: var(--ink); background: var(--white); outline: none; cursor: pointer; }
+    .filter-select:focus { border-color: var(--purple); }
+
+    .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+
+    .task-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 14px; border: 2px solid transparent; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; cursor: pointer; }
+    .task-card:hover { border-color: var(--purple-mid); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .task-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .level-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; flex-shrink: 0; text-transform: capitalize; }
+    .level-badge.beginner     { background: var(--mint-light);  color: var(--mint); }
+    .level-badge.intermediate { background: var(--amber-light); color: var(--amber); }
+    .level-badge.advanced     { background: var(--coral-light); color: var(--coral); }
+    .task-title { font-size: 1.05rem; font-weight: 900; color: var(--ink); line-height: 1.3; flex: 1; }
+    .task-meta { display: flex; gap: 16px; font-size: 0.8rem; font-weight: 700; color: var(--ink-soft); flex-wrap: wrap; }
+    .task-meta-item { display: flex; align-items: center; gap: 5px; }
+    .task-passage-preview { font-size: 0.83rem; color: var(--ink-soft); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .task-card-footer { display: flex; gap: 8px; padding-top: 10px; border-top: 1.5px dashed var(--border); flex-wrap: wrap; }
+    .btn-card { flex: 1; padding: 8px 10px; border-radius: 8px; font-family: 'Nunito', sans-serif; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; text-align: center; transition: background 0.15s, color 0.15s; min-width: 60px; }
+    .btn-card.preview { background: var(--purple-light); color: var(--purple); }
+    .btn-card.preview:hover { background: #ddd6fe; }
+    .btn-card.copy { background: var(--yellow-light); color: #92611a; }
+    .btn-card.copy:hover { background: #fde68a; }
+    .btn-card.danger { background: var(--coral-light); color: var(--coral); }
+    .btn-card.danger:hover { background: #fecaca; }
+
+    .empty-state { text-align: center; padding: 70px 20px; grid-column: 1/-1; }
+    .empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
+    .empty-title { font-size: 1.3rem; font-weight: 900; color: var(--ink); margin-bottom: 8px; }
+    .empty-sub { font-size: 0.92rem; color: var(--ink-soft); margin-bottom: 22px; }
+
+    .skeleton { background: linear-gradient(90deg, #ede9fe 25%, #f5f3ff 50%, #ede9fe 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 8px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(30,27,46,0.65); z-index: 300; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal-box { background: var(--white); border-radius: 18px; padding: 36px 32px; max-width: 380px; width: 92%; text-align: center; }
+    .modal-icon  { font-size: 2.4rem; margin-bottom: 12px; }
+    .modal-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
+    .modal-sub   { font-size: 0.9rem; color: var(--ink-soft); margin-bottom: 24px; }
+    .modal-btns  { display: flex; gap: 10px; justify-content: center; }
+    .btn-modal { padding: 11px 28px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 800; cursor: pointer; border: none; transition: opacity 0.15s; }
+    .btn-modal:hover { opacity: 0.85; }
+    .btn-modal.cancel { background: var(--border); color: var(--ink); }
+    .btn-modal.delete { background: var(--coral); color: #fff; }
+
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); background: var(--ink); color: #fff; padding: 13px 24px; border-radius: 50px; font-size: 0.9rem; font-weight: 700; box-shadow: var(--shadow-md); transition: transform 0.3s ease; z-index: 9999; white-space: nowrap; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--mint); }
+    .toast.error   { background: var(--coral); }
+
+    .auth-gate { display: none; position: fixed; inset: 0; background: rgba(30,27,46,0.7); z-index: 200; align-items: center; justify-content: center; }
+    .auth-gate.show { display: flex; }
+    .auth-gate-box { background: #fff; border-radius: 18px; padding: 40px 36px; max-width: 380px; width: 90%; text-align: center; }
+    .auth-gate-icon { font-size: 2.5rem; margin-bottom: 14px; }
+    .auth-gate-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 8px; }
+    .auth-gate-sub   { font-size: 0.9rem; color: var(--ink-soft); margin-bottom: 22px; }
+    .btn-gate { width: 100%; padding: 13px; background: var(--purple); color: #fff; border: none; border-radius: 50px; font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 800; cursor: pointer; }
+    .btn-gate:hover { background: var(--purple-dark); }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 0 16px; }
+      .page-header { padding: 28px 16px 24px; }
+      .stats-strip { padding: 14px 16px; }
+      .main { padding: 20px 12px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-gate" id="authGate">
+  <div class="auth-gate-box">
+    <div class="auth-gate-icon">🔒</div>
+    <div class="auth-gate-title">Teachers Only</div>
+    <div class="auth-gate-sub">This page is only accessible to teacher accounts.</div>
+    <button class="btn-gate" onclick="window.location.href='login.html'">Go to Login</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">Delete Reading Task?</div>
+    <div class="modal-sub">This will permanently delete the task and all its questions. This cannot be undone.</div>
+    <div class="modal-btns">
+      <button class="btn-modal cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-modal delete" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<nav class="topbar">
+  <a class="topbar-logo" href="landing_page.html">Lingua<span>AI</span></a>
+  <div class="topbar-nav">
+    <a class="btn-create" href="reading_create.html">＋ New Reading Task</a>
+    <button class="btn-nav outline" id="btnLogout">Log out</button>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div>
+      <div class="page-eyebrow">📖 Reading Feature</div>
+      <div class="page-title">My <span>Reading Tasks</span></div>
+      <div class="page-subtitle">Create, manage, and share reading tasks with your students.</div>
+    </div>
+  </div>
+</div>
+
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-icon purple">📚</div>
+      <div><div class="stat-label">Total Tasks</div><div class="stat-value" id="statTotal">—</div></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon mint">🟢</div>
+      <div><div class="stat-label">Beginner</div><div class="stat-value" id="statBeginner">—</div></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon yellow">🟡</div>
+      <div><div class="stat-label">Intermediate</div><div class="stat-value" id="statIntermediate">—</div></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon" style="background:var(--coral-light)">🔴</div>
+      <div><div class="stat-label">Advanced</div><div class="stat-value" id="statAdvanced">—</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" type="text" placeholder="Search by title…" oninput="renderTasks()" />
+    </div>
+    <select class="filter-select" id="levelFilter" onchange="renderTasks()">
+      <option value="">All Levels</option>
+      <option value="beginner">🟢 Beginner</option>
+      <option value="intermediate">🟡 Intermediate</option>
+      <option value="advanced">🔴 Advanced</option>
+    </select>
+  </div>
+
+  <div class="task-grid" id="taskGrid">
+    <div class="skeleton-card"><div class="skeleton" style="height:18px;width:60%"></div><div class="skeleton" style="height:14px;width:40%"></div><div class="skeleton" style="height:50px"></div></div>
+    <div class="skeleton-card"><div class="skeleton" style="height:18px;width:70%"></div><div class="skeleton" style="height:14px;width:35%"></div><div class="skeleton" style="height:50px"></div></div>
+    <div class="skeleton-card"><div class="skeleton" style="height:18px;width:55%"></div><div class="skeleton" style="height:14px;width:45%"></div><div class="skeleton" style="height:50px"></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = window.location.origin;
+  let allTasks = [];
+  let pendingDeleteId = null;
+
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || 'null');
+
+  if (!token || !user || (user.roleId !== 2 && user.roleId !== 3)) {
+    document.getElementById('authGate').classList.add('show');
+  }
+
+  document.getElementById('btnLogout').addEventListener('click', () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+
+  async function loadTasks() {
+    try {
+      const res  = await fetch(`${API}/api/reading`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      allTasks = data.tasks;
+      updateStats();
+      renderTasks();
+    } catch (e) {
+      showToast('❌ Could not load tasks: ' + e.message, 'error');
+      document.getElementById('taskGrid').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <div class="empty-title">Failed to load tasks</div>
+          <div class="empty-sub">${e.message}</div>
+        </div>`;
+    }
+  }
+
+  function updateStats() {
+    document.getElementById('statTotal').textContent        = allTasks.length;
+    document.getElementById('statBeginner').textContent     = allTasks.filter(t => t.level === 'beginner').length;
+    document.getElementById('statIntermediate').textContent = allTasks.filter(t => t.level === 'intermediate').length;
+    document.getElementById('statAdvanced').textContent     = allTasks.filter(t => t.level === 'advanced').length;
+  }
+
+  function renderTasks() {
+    const search   = document.getElementById('searchInput').value.trim().toLowerCase();
+    const level    = document.getElementById('levelFilter').value;
+    const filtered = allTasks.filter(t => {
+      return (!search || t.title.toLowerCase().includes(search)) && (!level || t.level === level);
+    });
+    const grid = document.getElementById('taskGrid');
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">${allTasks.length === 0 ? '📖' : '🔍'}</div>
+          <div class="empty-title">${allTasks.length === 0 ? 'No reading tasks yet' : 'No tasks match your search'}</div>
+          <div class="empty-sub">${allTasks.length === 0 ? 'Create your first reading task to get started.' : 'Try a different search or filter.'}</div>
+          ${allTasks.length === 0 ? `<a class="btn-create" href="reading_create.html" style="display:inline-flex;margin-top:4px">＋ Create Reading Task</a>` : ''}
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(task => {
+      const levelIcon = { beginner: '🟢', intermediate: '🟡', advanced: '🔴' }[task.level] || '📘';
+      const date      = new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const preview   = (task.passage || '').replace(/\s+/g, ' ').slice(0, 160) + '…';
+      return `
+        <div class="task-card" onclick="openTask(${task.id})">
+          <div class="task-card-top">
+            <div class="task-title">${escHtml(task.title)}</div>
+            <span class="level-badge ${task.level}">${levelIcon} ${task.level}</span>
+          </div>
+          <div class="task-meta">
+            <span class="task-meta-item">❓ ${task.question_count} question${task.question_count !== 1 ? 's' : ''}</span>
+            <span class="task-meta-item">📅 ${date}</span>
+          </div>
+          <div class="task-passage-preview">${escHtml(preview)}</div>
+          <div class="task-card-footer" onclick="event.stopPropagation()">
+            <button class="btn-card preview" onclick="openTask(${task.id})">👁 Preview</button>
+            <button class="btn-card copy"    onclick="copyLink(${task.id})">🔗 Copy Link</button>
+            <button class="btn-card danger"  onclick="askDelete(${task.id})">🗑 Delete</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function openTask(id) { window.open(`reading_play.html?id=${id}`, '_blank'); }
+
+  function copyLink(id) {
+    const url = `${window.location.origin}/reading_play.html?id=${id}`;
+    navigator.clipboard.writeText(url)
+      .then(() => showToast('🔗 Student link copied!', 'success'))
+      .catch(() => prompt('Copy this link:', url));
+  }
+
+  function askDelete(id) {
+    pendingDeleteId = id;
+    document.getElementById('deleteModal').classList.add('show');
+    document.getElementById('confirmDeleteBtn').onclick = confirmDelete;
+  }
+
+  function closeDeleteModal() {
+    pendingDeleteId = null;
+    document.getElementById('deleteModal').classList.remove('show');
+  }
+
+  async function confirmDelete() {
+    if (!pendingDeleteId) return;
+    const id = pendingDeleteId;
+    closeDeleteModal();
+    try {
+      const res  = await fetch(`${API}/api/reading/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      allTasks = allTasks.filter(t => t.id !== id);
+      updateStats();
+      renderTasks();
+      showToast('🗑️ Task deleted.', 'success');
+    } catch (e) {
+      showToast('❌ Delete failed: ' + e.message, 'error');
+    }
+  }
+
+  let toastTimer = null;
+  function showToast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type} show`;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+  }
+
+  if (token && user && (user.roleId === 2 || user.roleId === 3)) loadTasks();
+</script>
+</body>
+</html>

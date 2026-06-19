@@ -23,6 +23,7 @@ const quizRoutes    = require('./quizRoutes');
 const courseRoutes  = require('./courseRoutes');
 const studentRoutes = require('./studentRoutes');
 const { router: gameRouter, registerSocketHandlers } = require('./gameRoutes');
+const readingRoutes = require('./readingRoutes');
 
 const app        = express();
 const httpServer = http.createServer(app);
@@ -72,6 +73,7 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/game',    gameRouter);
+app.use('/api/reading', readingRoutes);
 
 app.use(express.static(path.join(__dirname, '..')));
 
@@ -130,6 +132,13 @@ app.use((err, _req, res, _next) => {
       console.log('   POST   /api/game/classes/:id/start   – teacher starts game');
       console.log('   GET    /api/game/classes/:id/session – get active session');
       console.log('   DELETE /api/game/classes/:id/session – teacher ends game');
+      console.log('   POST   /api/reading              – teacher creates reading task');
+      console.log('   GET    /api/reading              – teacher lists their tasks');
+      console.log('   GET    /api/reading/:id          – get full task (teacher)');
+      console.log('   GET    /api/reading/:id/play     – student view (no answers)');
+      console.log('   POST   /api/reading/:id/check    – student submits answers');
+      console.log('   PATCH  /api/reading/:id          – teacher updates task');
+      console.log('   DELETE /api/reading/:id          – teacher deletes task');
     });
   } catch (err) {
     console.error('Failed to start server:', err);

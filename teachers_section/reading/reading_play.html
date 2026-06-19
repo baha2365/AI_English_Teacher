@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading Task — LinguaAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --purple:       #7c3aed;
+      --purple-dark:  #5b21b6;
+      --purple-light: #ede9fe;
+      --purple-mid:   #a78bfa;
+      --yellow:       #f5a623;
+      --yellow-light: #fef3dc;
+      --cream:        #faf9ff;
+      --ink:          #1e1b2e;
+      --ink-soft:     #6b5fa0;
+      --border:       #ddd6fe;
+      --bg:           #f0ebff;
+      --white:        #ffffff;
+      --mint:         #10b981;
+      --mint-light:   #d1fae5;
+      --coral:        #ef4444;
+      --coral-light:  #fee2e2;
+      --amber:        #f59e0b;
+      --amber-light:  #fef3c7;
+      --shadow-sm:    0 2px 8px rgba(124,58,237,0.10);
+      --shadow-md:    0 6px 24px rgba(124,58,237,0.14);
+      --radius:       16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; padding-bottom: 60px; }
+
+    .topbar { background: var(--white); border-bottom: 2px solid var(--border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .topbar-logo { font-family: 'Caveat', cursive; font-size: 1.6rem; font-weight: 700; color: var(--purple); text-decoration: none; }
+    .topbar-logo span { color: var(--yellow); }
+    .btn-back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700; color: var(--ink-soft); background: none; border: 2px solid var(--border); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+    .btn-back:hover { border-color: var(--purple); color: var(--purple); }
+
+    .hero { background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%); padding: 36px 32px 32px; color: #fff; }
+    .hero-inner { max-width: 840px; margin: 0 auto; }
+    .hero-eyebrow { font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--purple-mid); margin-bottom: 8px; }
+    .hero-title { font-size: 1.85rem; font-weight: 900; line-height: 1.15; margin-bottom: 12px; }
+    .hero-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; }
+    .hero-badge.level-beginner     { background: rgba(16,185,129,0.20); color: #6ee7b7; }
+    .hero-badge.level-intermediate { background: rgba(245,158,11,0.22);  color: #fde68a; }
+    .hero-badge.level-advanced     { background: rgba(239,68,68,0.22);   color: #fca5a5; }
+    .hero-badge.info               { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.85); }
+
+    .main { max-width: 840px; margin: 0 auto; padding: 28px 16px 20px; display: flex; flex-direction: column; gap: 22px; }
+    .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+
+    .passage-card { padding: 32px 36px; }
+    .section-label { display: inline-flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: var(--purple); margin-bottom: 18px; }
+    .section-label::before { content: ''; display: block; width: 22px; height: 3px; background: var(--purple); border-radius: 2px; }
+    .passage-body { font-size: 1.05rem; line-height: 1.95; color: var(--ink); }
+    .passage-body p { margin-bottom: 14px; }
+    .passage-body p:last-child { margin-bottom: 0; }
+
+    .progress-card { padding: 20px 36px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 800; color: var(--ink-soft); margin-bottom: 8px; }
+    .progress-track { height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--purple-mid)); border-radius: 99px; transition: width 0.4s ease; }
+
+    .questions-card { padding: 28px 36px 32px; }
+    .question-block { margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1.5px dashed var(--border); }
+    .question-block:last-of-type { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .question-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+    .q-num { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 30px; background: var(--yellow); color: var(--ink); border-radius: 50%; font-size: 0.85rem; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+    .question-text { font-size: 1rem; font-weight: 800; color: var(--ink); line-height: 1.4; }
+
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .option-label { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-radius: 10px; border: 2px solid var(--border); background: var(--cream); cursor: pointer; transition: border-color 0.18s, background 0.18s, transform 0.12s; font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); user-select: none; }
+    .option-label:hover:not(.locked) { border-color: var(--purple); background: var(--purple-light); color: var(--ink); transform: translateY(-1px); }
+    .option-label.selected { border-color: var(--purple); background: var(--purple-light); color: var(--purple); }
+    .option-label.correct  { border-color: var(--mint);  background: var(--mint-light);   color: var(--mint); }
+    .option-label.wrong    { border-color: var(--coral); background: var(--coral-light);  color: var(--coral); }
+    .option-label.locked   { cursor: default; }
+
+    .opt-letter { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; background: #e0d9f8; color: var(--purple-dark); font-size: 0.8rem; font-weight: 900; flex-shrink: 0; transition: background 0.18s, color 0.18s; }
+    .option-label.selected .opt-letter { background: var(--purple); color: #fff; }
+    .option-label.correct  .opt-letter { background: var(--mint);   color: #fff; }
+    .option-label.wrong    .opt-letter { background: var(--coral);  color: #fff; }
+
+    .feedback-row { display: none; align-items: center; gap: 7px; margin-top: 10px; font-size: 0.83rem; font-weight: 700; }
+    .feedback-row.show { display: flex; }
+    .feedback-row.correct { color: var(--mint); }
+    .feedback-row.wrong   { color: var(--coral); }
+
+    .actions-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 32px; }
+    .btn-check { display: inline-flex; align-items: center; gap: 10px; padding: 15px 48px; border-radius: 50px; background: linear-gradient(135deg, var(--purple), var(--purple-dark)); color: #fff; border: none; font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 16px rgba(124,58,237,0.35); transition: transform 0.14s, box-shadow 0.14s, opacity 0.14s; }
+    .btn-check:hover { transform: translateY(-2px); box-shadow: 0 7px 22px rgba(124,58,237,0.42); }
+    .btn-check:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+    .btn-retry { display: none; padding: 11px 32px; border-radius: 50px; background: none; border: 2px solid var(--border); font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 800; color: var(--ink-soft); cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .btn-retry:hover { background: var(--ink-soft); color: #fff; }
+    .btn-retry.show { display: inline-block; }
+
+    .warn-msg { display: none; font-size: 0.88rem; font-weight: 700; color: var(--coral); text-align: center; }
+    .warn-msg.show { display: block; }
+
+    .score-banner { display: none; border-radius: 14px; padding: 24px 28px; text-align: center; font-weight: 800; font-size: 1.05rem; }
+    .score-banner.show { display: block; }
+    .score-banner.great    { background: var(--mint-light);  color: var(--mint); }
+    .score-banner.good     { background: var(--amber-light); color: #92611a; }
+    .score-banner.tryagain { background: var(--coral-light); color: var(--coral); }
+    .score-num { font-family: 'Caveat', cursive; font-size: 3rem; font-weight: 700; display: block; margin-bottom: 4px; }
+
+    .state-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 14px; text-align: center; padding: 40px 20px; }
+    .state-icon { font-size: 3rem; }
+    .state-title { font-size: 1.3rem; font-weight: 900; color: var(--ink); }
+    .state-sub   { font-size: 0.92rem; color: var(--ink-soft); }
+
+    .sk { display: block; height: 16px; border-radius: 6px; background: linear-gradient(90deg, #ede9fe 25%, #f5f3ff 50%, #ede9fe 75%); background-size: 200% 100%; animation: shimmer 1.3s infinite; margin-bottom: 10px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 0 16px; }
+      .hero { padding: 24px 16px 22px; }
+      .passage-card, .questions-card, .progress-card { padding: 20px 18px; }
+      .options-grid { grid-template-columns: 1fr; }
+      .hero-title { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a class="topbar-logo" href="landing_page.html">Lingua<span>AI</span></a>
+  <div>
+    <button class="btn-back" onclick="history.back()">← Back</button>
+  </div>
+</nav>
+
+<div id="app"></div>
+
+<script>
+  const API    = window.location.origin;
+  const params = new URLSearchParams(window.location.search);
+  const taskId = params.get('id');
+  const token  = localStorage.getItem('token');
+  const LETTERS = ['A', 'B', 'C', 'D'];
+
+  let taskData   = null;
+  let selections = {};
+  let submitted  = false;
+
+  (async function boot() {
+    if (!token) { renderState('🔒', 'Login Required', 'Please log in to view this reading task.', true); return; }
+    if (!taskId) { renderState('⚠️', 'No Task Found', 'No reading task ID was provided in the URL.'); return; }
+    renderLoading();
+    try {
+      const res  = await fetch(API + '/api/reading/' + taskId + '/play', { headers: { Authorization: 'Bearer ' + token } });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Task not found.');
+      taskData = data.task;
+      renderTask();
+    } catch (e) {
+      renderState('📭', 'Task Not Found', e.message || 'This reading task could not be loaded.');
+    }
+  })();
+
+  function renderLoading() {
+    document.getElementById('app').innerHTML =
+      '<div style="max-width:840px;margin:32px auto;padding:0 16px">' +
+      '<div class="card passage-card"><div class="sk" style="width:40%;height:20px;margin-bottom:18px"></div>' +
+      '<div class="sk" style="width:90%"></div><div class="sk" style="width:80%"></div>' +
+      '<div class="sk" style="width:85%"></div><div class="sk" style="width:70%"></div></div></div>';
+  }
+
+  function renderState(icon, title, sub, showLogin) {
+    document.getElementById('app').innerHTML =
+      '<div class="state-screen"><div class="state-icon">' + icon + '</div>' +
+      '<div class="state-title">' + title + '</div>' +
+      '<div class="state-sub">' + sub + '</div>' +
+      (showLogin ? '<button onclick="window.location.href=\'login.html\'" style="margin-top:12px;padding:12px 32px;background:var(--purple);color:#fff;border:none;border-radius:50px;font-family:Nunito,sans-serif;font-size:1rem;font-weight:800;cursor:pointer;">Go to Login</button>' : '') +
+      '</div>';
+  }
+
+  function renderTask() {
+    var task = taskData;
+    var levelMap = { beginner: '🟢 Beginner', intermediate: '🟡 Intermediate', advanced: '🔴 Advanced' };
+    var paragraphs = task.passage.split(/\n+/).filter(function(p){ return p.trim(); }).map(function(p){ return '<p>' + esc(p.trim()) + '</p>'; }).join('');
+
+    var qBlocks = task.questions.map(function(q, qi) {
+      var opts = q.options.map(function(opt, oi) {
+        return '<div class="option-label" id="opt-' + q.id + '-' + opt.id + '" onclick="selectOption(' + q.id + ',' + opt.id + ',this)">' +
+               '<span class="opt-letter">' + LETTERS[oi] + '</span>' + esc(opt.option_text) + '</div>';
+      }).join('');
+      return '<div class="question-block" id="qblock-' + q.id + '">' +
+             '<div class="question-header"><span class="q-num">' + (qi+1) + '</span>' +
+             '<span class="question-text">' + esc(q.question) + '</span></div>' +
+             '<div class="options-grid" id="opts-grid-' + q.id + '">' + opts + '</div>' +
+             '<div class="feedback-row" id="fb-' + q.id + '"></div></div>';
+    }).join('');
+
+    document.getElementById('app').innerHTML =
+      '<div class="hero"><div class="hero-inner">' +
+      '<div class="hero-eyebrow">📖 Reading Task</div>' +
+      '<div class="hero-title">' + esc(task.title) + '</div>' +
+      '<div class="hero-meta">' +
+      '<span class="hero-badge level-' + task.level + '">' + (levelMap[task.level] || task.level) + '</span>' +
+      '<span class="hero-badge info">👤 ' + esc(task.teacher_name || 'Your teacher') + '</span>' +
+      '<span class="hero-badge info">❓ ' + task.questions.length + ' question' + (task.questions.length !== 1 ? 's' : '') + '</span>' +
+      '</div></div></div>' +
+      '<div class="main">' +
+      '<div class="card passage-card"><div class="section-label">Reading Passage</div><div class="passage-body">' + paragraphs + '</div></div>' +
+      '<div class="card progress-card"><div class="progress-label"><span>Your progress</span><span id="progressText">0 / ' + task.questions.length + ' answered</span></div>' +
+      '<div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div></div>' +
+      '<div class="card questions-card"><div class="section-label">❓ Comprehension Questions</div>' + qBlocks +
+      '<div class="actions-wrap">' +
+      '<div class="warn-msg" id="warnMsg">⚠️ Please answer all questions before checking.</div>' +
+      '<button class="btn-check" id="btnCheck" onclick="checkAnswers()">✅ Check My Answers</button>' +
+      '<div class="score-banner" id="scoreBanner"></div>' +
+      '<button class="btn-retry" id="btnRetry" onclick="retryQuiz()">🔄 Try Again</button>' +
+      '</div></div></div>';
+  }
+
+  function selectOption(questionId, optionId, el) {
+    if (submitted) return;
+    var grid = document.getElementById('opts-grid-' + questionId);
+    grid.querySelectorAll('.option-label').forEach(function(o){ o.classList.remove('selected'); });
+    el.classList.add('selected');
+    selections[questionId] = optionId;
+    updateProgress();
+  }
+
+  function updateProgress() {
+    var total    = taskData.questions.length;
+    var answered = Object.keys(selections).length;
+    var pct      = total > 0 ? (answered / total) * 100 : 0;
+    var fill = document.getElementById('progressFill');
+    var text = document.getElementById('progressText');
+    if (fill) fill.style.width = pct + '%';
+    if (text) text.textContent = answered + ' / ' + total + ' answered';
+  }
+
+  async function checkAnswers() {
+    var total    = taskData.questions.length;
+    var answered = Object.keys(selections).length;
+    var warnEl   = document.getElementById('warnMsg');
+
+    if (answered < total) {
+      warnEl.classList.add('show');
+      var unanswered = taskData.questions.find(function(q){ return !selections[q.id]; });
+      if (unanswered) document.getElementById('qblock-' + unanswered.id).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    warnEl.classList.remove('show');
+
+    var btn = document.getElementById('btnCheck');
+    btn.disabled = true;
+    btn.textContent = '⏳ Checking…';
+
+    try {
+      var answers = {};
+      for (var qId in selections) answers[qId] = selections[qId];
+      var res  = await fetch(API + '/api/reading/' + taskId + '/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ answers: answers })
+      });
+      var data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      submitted = true;
+      revealResults(data);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '✅ Check My Answers';
+      alert('Error checking answers: ' + e.message);
+    }
+  }
+
+  function revealResults(data) {
+    var score   = data.score;
+    var total   = data.total;
+    var results = data.results;
+
+    taskData.questions.forEach(function(q) {
+      var grid   = document.getElementById('opts-grid-' + q.id);
+      var fbEl   = document.getElementById('fb-' + q.id);
+      var result = results[String(q.id)];
+      if (!result) return;
+
+      var selectedOptId = selections[q.id];
+      var correctOptId  = result.correct_option_id;
+
+      grid.querySelectorAll('.option-label').forEach(function(label) {
+        label.classList.add('locked');
+        var parts = label.id.split('-');
+        var optId = parseInt(parts[parts.length - 1]);
+        if (optId === selectedOptId && result.correct) {
+          label.classList.remove('selected'); label.classList.add('correct');
+        } else if (optId === selectedOptId && !result.correct) {
+          label.classList.remove('selected'); label.classList.add('wrong');
+        } else if (optId === correctOptId && !result.correct) {
+          label.classList.add('correct');
+        }
+      });
+
+      if (result.correct) {
+        fbEl.innerHTML = '✅ Correct!';
+        fbEl.className = 'feedback-row show correct';
+      } else {
+        fbEl.innerHTML = '❌ Not quite — the correct answer is highlighted in green.';
+        fbEl.className = 'feedback-row show wrong';
+      }
+    });
+
+    var banner = document.getElementById('scoreBanner');
+    var retry  = document.getElementById('btnRetry');
+    var cls, msg;
+    if (score === total) {
+      cls = 'great';    msg = '🎉 Perfect score! Outstanding work!';
+    } else if (score >= Math.ceil(total * 0.6)) {
+      cls = 'good';     msg = '👍 Good job! Keep reading and you\'ll ace it!';
+    } else {
+      cls = 'tryagain'; msg = '💪 Keep going! Read the passage carefully and try again.';
+    }
+    banner.innerHTML = '<span class="score-num">' + score + ' / ' + total + '</span>' + msg;
+    banner.className = 'score-banner show ' + cls;
+    retry.classList.add('show');
+    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function retryQuiz() {
+    selections = {};
+    submitted  = false;
+    document.querySelectorAll('.option-label').forEach(function(el) { el.classList.remove('selected','correct','wrong','locked'); });
+    document.querySelectorAll('.feedback-row').forEach(function(el) { el.className = 'feedback-row'; el.innerHTML = ''; });
+    document.getElementById('scoreBanner').className = 'score-banner';
+    document.getElementById('btnRetry').classList.remove('show');
+    document.getElementById('btnCheck').disabled = false;
+    document.getElementById('btnCheck').textContent = '✅ Check My Answers';
+    document.getElementById('warnMsg').classList.remove('show');
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
