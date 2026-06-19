@@ -519,6 +519,7 @@
   const API = LINGUA.base;
   const LETTERS = ['A', 'B', 'C', 'D'];
   let questionCount = 0;
+  let optionUidCounter = 0;
 
   // ── Auth guard ──────────────────────────────────────────────────────────────
   /**
@@ -560,7 +561,7 @@
 
     // Slow path: localStorage has token but no usable role → ask the server
     try {
-      const res  = await fetch(API + '/api/auth/me', {
+      const res  = await fetch(`${API}/api/auth/me`, {
         headers: { Authorization: 'Bearer ' + token }
       });
       const data = await res.json();
@@ -658,7 +659,7 @@
 
     const optIndex = count; // 0-based
     const letter   = LETTERS[optIndex];
-    const optId    = `opt-${qIndex}-${Date.now()}`;
+    const optId    = `opt-${qIndex}-${optionUidCounter++}`;
 
     const row = document.createElement('div');
     row.className = 'option-row';
