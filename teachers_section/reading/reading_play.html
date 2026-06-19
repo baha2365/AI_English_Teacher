@@ -136,8 +136,10 @@
 
 <div id="app"></div>
 
+<script src="../../config.js"></script>
+
 <script>
-  const API    = window.location.origin;
+  const API    = LINGUA.base;
   const params = new URLSearchParams(window.location.search);
   const taskId = params.get('id');
   const token  = localStorage.getItem('token');
@@ -152,7 +154,7 @@
     if (!taskId) { renderState('⚠️', 'No Task Found', 'No reading task ID was provided in the URL.'); return; }
     renderLoading();
     try {
-      const res  = await fetch(API + '/api/reading/' + taskId + '/play', { headers: { Authorization: 'Bearer ' + token } });
+      const res  = await fetch(`${API}/api/reading/${taskId}/play`, { headers: { Authorization: 'Bearer ' + token } });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Task not found.');
       taskData = data.task;
