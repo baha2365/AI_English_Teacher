@@ -41,6 +41,11 @@
       --reading-bg:   rgba(46,158,143,0.12);
       --reading-bd:   rgba(46,158,143,0.28);
       --reading-glow: rgba(46,158,143,0.4);
+
+      --quiz:      #4F6DF5;
+      --quiz-bg:   rgba(79,109,245,0.12);
+      --quiz-bd:   rgba(79,109,245,0.28);
+      --quiz-glow: rgba(79,109,245,0.4);
     }
 
     html { scroll-behavior: smooth; }
@@ -442,6 +447,46 @@
       .reading-row { grid-template-columns: 1fr auto; }
       .reading-level, .reading-qcount { display:none; }
     }
+
+    #quizBanner {
+      display: none;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(130deg, rgba(79,109,245,0.18) 0%, rgba(52,80,194,0.1) 100%);
+      border: 1px solid var(--quiz-bd);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 2rem;
+      animation: bannerSlideIn .45s cubic-bezier(.34, 1.56, .64, 1) both;
+    }
+    #quizBanner.show { display: block; }
+    #quizBanner::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--quiz), var(--gold), var(--quiz), transparent);
+    }
+    #quizBanner::after {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 240px; height: 200px;
+      background: radial-gradient(ellipse at top right, rgba(79,109,245,0.25) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .quiz-row {
+      display:grid; grid-template-columns: 1fr 140px 110px;
+      align-items:center; gap:1rem; padding:.85rem 1.3rem .85rem 1.5rem;
+      border-bottom:1px solid var(--border); animation: rowIn .35s cubic-bezier(.22,1,.36,1) both;
+    }
+    .quiz-row:last-child { border-bottom:none; }
+    .quiz-row:hover { background:rgba(212,168,83,0.028); }
+    .quiz-title { font-size:.88rem; font-weight:600; color:var(--text); }
+    .quiz-qcount { font-size:.7rem; color:var(--text-3); }
+
+    @media (max-width: 640px) {
+      .quiz-row { grid-template-columns: 1fr auto; }
+      .quiz-qcount { display:none; }
+    }
   </style>
 </head>
 <body>
@@ -558,8 +603,49 @@
   <div style="font-size:.95rem;font-weight:600;color:var(--text-2);margin-bottom:.25rem;">No reading tasks yet</div>
   <div style="font-size:.8rem;color:var(--text-3);">Your teacher hasn't assigned any reading tasks to this class.</div>
 </div>
+
 <div id="readingListWrap" style="display:none;margin-bottom:2rem;">
   <div class="roster-panel" id="readingPanel"></div>
+</div>
+
+<!-- ════════════════════════════════
+     QUIZ NOTIFICATION BANNER
+════════════════════════════════ -->
+<div id="quizBanner">
+  <button class="game-banner-dismiss" id="dismissQuizBanner" title="Dismiss">✕</button>
+  <div class="game-banner-inner">
+    <div class="game-banner-emoji">📝</div>
+    <div class="game-banner-body">
+      <div class="game-banner-eyebrow" style="color:var(--quiz);">
+        <span class="live-dot" style="background:var(--quiz);"></span>
+        New Quiz
+      </div>
+      <div class="game-banner-title" id="quizBannerTitle">A new quiz is available!</div>
+      <div class="game-banner-sub" id="quizBannerSub">Your teacher just assigned a quiz — give it a go!</div>
+    </div>
+    <a class="btn-join-game" id="quizBannerBtn" href="#" target="_blank"
+      style="background:linear-gradient(135deg,var(--quiz),#3450C2);box-shadow:0 4px 20px var(--quiz-glow),inset 0 1px 0 rgba(255,255,255,0.12);">
+      📝 Take Quiz
+    </a>
+  </div>
+</div>
+
+<!-- Section bar -->
+<div class="section-bar">
+  <span class="section-label">📝 Quizzes</span>
+  <span class="section-hint">Assigned by your teacher</span>
+</div>
+
+<div id="quizLoadingState" style="display:flex;align-items:center;gap:.75rem;padding:2rem;color:var(--text-3);font-size:.84rem;">
+  <div class="spinner dark"></div>Loading quizzes…
+</div>
+<div id="quizEmptyState" style="display:none;text-align:center;padding:2.5rem 1.5rem;border:1px dashed var(--border-2);border-radius:var(--radius);background:var(--surface);margin-bottom:2rem;">
+  <div style="font-size:1.8rem;margin-bottom:.6rem;opacity:.7;">📝</div>
+  <div style="font-size:.95rem;font-weight:600;color:var(--text-2);margin-bottom:.25rem;">No quizzes yet</div>
+  <div style="font-size:.8rem;color:var(--text-3);">Your teacher hasn't assigned any quizzes to this class.</div>
+</div>
+<div id="quizListWrap" style="display:none;margin-bottom:2rem;">
+  <div class="roster-panel" id="quizPanel"></div>
 </div>
 
   <!-- Section bar -->
@@ -631,6 +717,11 @@ const READING_TASKS_URL = `${API}/classes/${classId}/reading-tasks`;
 // NOTE: adjust this if your reading pages live in a different folder
 const READING_PLAY_PATH = 'teachers_section/reading/reading_play.html';
 let exposedReadingTasks = [];
+
+const QUIZ_TASKS_URL = `${API}/classes/${classId}/quizzes`;
+// NOTE: adjust this if your quiz pages live in a different folder
+const QUIZ_PLAY_PATH = 'teachers_section/quiz/quiz_play.html';
+let exposedClassQuizzes = [];
 
 let currentUserId = null;
 let gameRoomUrl   = null;
@@ -721,6 +812,19 @@ async function checkExistingGame() {
 ══════════════════════════════════════ */
 function initSocket() {
   const socket = io(API_BASE, { transports: ['websocket', 'polling'] });
+
+  socket.on('quiz_assigned', ({ classId: gClassId, quizzes } = {}) => {
+    if (gClassId !== classId) return;
+    loadClassQuizzes();
+    if (quizzes && quizzes.length) {
+      showQuizBanner(quizzes[0]);
+      if (quizzes.length > 1) showToast(`📝 ${quizzes.length} new quizzes assigned!`);
+    }
+  });
+  socket.on('quiz_unassigned', ({ classId: gClassId } = {}) => {
+    if (gClassId !== classId) return;
+    loadClassQuizzes();
+  });
 
     socket.on('reading_assigned', ({ classId: gClassId, tasks } = {}) => {
       if (gClassId !== classId) return;
@@ -949,6 +1053,54 @@ document.getElementById('dismissReadingBanner').addEventListener('click', () => 
 });
 
 /* ══════════════════════════════════════
+   QUIZZES
+══════════════════════════════════════ */
+async function loadClassQuizzes() {
+  const loading = document.getElementById('quizLoadingState');
+  const empty   = document.getElementById('quizEmptyState');
+  const wrap    = document.getElementById('quizListWrap');
+  loading.style.display = 'flex'; empty.style.display = 'none'; wrap.style.display = 'none';
+  try {
+    const res  = await fetch(QUIZ_TASKS_URL, { headers: authH() });
+    const data = await res.json();
+    loading.style.display = 'none';
+    if (!res.ok || !data.success) { showFeedback(data.message || 'Failed to load quizzes.'); return; }
+    exposedClassQuizzes = data.quizzes || [];
+    renderClassQuizzes();
+  } catch {
+    loading.style.display = 'none';
+    showFeedback('Could not reach the server.');
+  }
+}
+
+function renderClassQuizzes() {
+  const empty = document.getElementById('quizEmptyState');
+  const wrap  = document.getElementById('quizListWrap');
+  const panel = document.getElementById('quizPanel');
+  if (!exposedClassQuizzes.length) { empty.style.display = 'block'; wrap.style.display = 'none'; return; }
+  empty.style.display = 'none'; wrap.style.display = 'block';
+  panel.innerHTML = exposedClassQuizzes.map(q => `
+    <div class="quiz-row">
+      <div class="quiz-title">${escHtml(q.title)}</div>
+      <div class="quiz-qcount">❓ ${q.question_count} question${q.question_count !== 1 ? 's' : ''}</div>
+      <a class="btn-join-game" style="padding:.5rem 1.1rem;font-size:.78rem;background:linear-gradient(135deg,var(--quiz),#3450C2);box-shadow:none;"
+         href="${QUIZ_PLAY_PATH}?id=${q.id}" target="_blank">📝 Play</a>
+    </div>`).join('');
+}
+
+function showQuizBanner(quiz) {
+  const banner = document.getElementById('quizBanner');
+  document.getElementById('quizBannerTitle').textContent = `New quiz: "${quiz.title}"`;
+  document.getElementById('quizBannerSub').textContent   = `Your teacher just assigned a quiz with ${quiz.question_count} question${quiz.question_count !== 1 ? 's' : ''}. Give it a go!`;
+  document.getElementById('quizBannerBtn').href = `${QUIZ_PLAY_PATH}?id=${quiz.id}`;
+  banner.classList.add('show');
+  setTimeout(() => banner.scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
+}
+document.getElementById('dismissQuizBanner').addEventListener('click', () => {
+  document.getElementById('quizBanner').classList.remove('show');
+});
+
+/* ══════════════════════════════════════
    GUARD + INIT
 ══════════════════════════════════════ */
 (async function init() {
@@ -962,7 +1114,7 @@ document.getElementById('dismissReadingBanner').addEventListener('click', () => 
   await loadMe();
 
   // 2. Load class info + roster in parallel
-  await Promise.all([ loadClass(), loadClassmates(), loadReadingTasks() ]);
+  await Promise.all([ loadClass(), loadClassmates(), loadReadingTasks(), loadClassQuizzes() ]);
 
   // 3. Check if a game is already running (REST fallback — works even without socket)
   await checkExistingGame();
