@@ -462,4 +462,131 @@ router.delete('/:id/reading-tasks/:taskId', authenticate, requireTeacher, async 
   }
 });
 
+// ─── GET /api/courses/:courseId/classes/:id/quizzes ───────────────────────────
+// List quizzes currently exposed to this class.
+router.get('/:id/quizzes', authenticate, requireTeacher, async (req, res) => {
+  const { courseId, id } = req.params;
+  try {
+    if (!(await ownsCourse(courseId, req.userId))) {
+      return res.status(404).json({ success: false, message: 'Course not found.' });
+    }
+
+    const { rows } = await pool.query(
+      `SELECT q.id, q.title, q.description, cqa.assigned_at,
+              COUNT(qq.id)::int AS question_count
+         FROM class_quiz_assignments cqa
+         JOIN quizzes q ON q.id = cqa.quiz_id
+         LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
+        WHERE cqa.class_id = $1
+        GROUP BY q.id, cqa.assigned_at
+        ORDER BY cqa.assigned_at DESC`,
+      [id]
+    );
+    return res.json({ success: true, quizzes: rows });
+  } catch (err) {
+    console.error('List class quizzes error:', err);
+    return res.status(500).json({ success: false, message: 'Could not fetch quizzes.' });
+  }
+});
+
+// ─── POST /api/courses/:courseId/classes/:id/quizzes ──────────────────────────
+// Body: { quiz_ids: [1, 2, 3] } — expose one or more of the teacher's own quizzes.
+router.post('/:id/quizzes', authenticate, requireTeacher, async (req, res) => {
+  const { courseId, id } = req.params;
+  const { quiz_ids } = req.body;
+
+  if (!Array.isArray(quiz_ids) || !quiz_ids.length) {
+    return res.status(400).json({ success: false, message: 'quiz_ids (non-empty array) is required.' });
+  }
+  const cleanIds = [...new Set(quiz_ids.map(Number).filter(Number.isInteger))];
+  if (!cleanIds.length) {
+    return res.status(400).json({ success: false, message: 'quiz_ids must contain valid integers.' });
+  }
+
+  try {
+    if (!(await ownsCourse(courseId, req.userId))) {
+      return res.status(404).json({ success: false, message: 'Course not found.' });
+    }
+
+    const { rows: classRows } = await pool.query(
+      `SELECT id FROM classes WHERE id = $1 AND course_id = $2`,
+      [id, courseId]
+    );
+    if (!classRows.length) {
+      return res.status(404).json({ success: false, message: 'Class not found.' });
+    }
+
+    // Confirm every quiz belongs to this teacher before exposing any of them
+    const { rows: ownedRows } = await pool.query(
+      `SELECT id FROM quizzes WHERE id = ANY($1::int[]) AND created_by = $2`,
+      [cleanIds, req.userId]
+    );
+    if (ownedRows.length !== cleanIds.length) {
+      return res.status(403).json({ success: false, message: 'One or more quizzes are not yours.' });
+    }
+
+    for (const quizId of cleanIds) {
+      await pool.query(
+        `INSERT INTO class_quiz_assignments (class_id, quiz_id, assigned_by)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (class_id, quiz_id) DO NOTHING`,
+        [id, quizId, req.userId]
+      );
+    }
+
+    const { rows: quizzes } = await pool.query(
+      `SELECT q.id, q.title, q.description, cqa.assigned_at,
+              COUNT(qq.id)::int AS question_count
+         FROM class_quiz_assignments cqa
+         JOIN quizzes q ON q.id = cqa.quiz_id
+         LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
+        WHERE cqa.class_id = $1
+        GROUP BY q.id, cqa.assigned_at
+        ORDER BY cqa.assigned_at DESC`,
+      [id]
+    );
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`class:${id}`).emit('quiz_assigned', {
+        classId: id,
+        quizzes: quizzes.filter(q => cleanIds.includes(q.id)),
+      });
+    }
+
+    return res.status(201).json({ success: true, message: 'Quiz(zes) exposed.', quizzes });
+  } catch (err) {
+    console.error('Expose quizzes error:', err);
+    return res.status(500).json({ success: false, message: 'Could not expose quizzes.' });
+  }
+});
+
+// ─── DELETE /api/courses/:courseId/classes/:id/quizzes/:quizId ────────────────
+router.delete('/:id/quizzes/:quizId', authenticate, requireTeacher, async (req, res) => {
+  const { courseId, id, quizId } = req.params;
+  try {
+    if (!(await ownsCourse(courseId, req.userId))) {
+      return res.status(404).json({ success: false, message: 'Course not found.' });
+    }
+
+    const { rowCount } = await pool.query(
+      `DELETE FROM class_quiz_assignments WHERE class_id = $1 AND quiz_id = $2`,
+      [id, quizId]
+    );
+    if (!rowCount) {
+      return res.status(404).json({ success: false, message: 'Assignment not found.' });
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`class:${id}`).emit('quiz_unassigned', { classId: id, quizId: Number(quizId) });
+    }
+
+    return res.json({ success: true, message: 'Quiz removed from class.' });
+  } catch (err) {
+    console.error('Remove class quiz error:', err);
+    return res.status(500).json({ success: false, message: 'Could not remove quiz.' });
+  }
+});
+
 module.exports = router;
