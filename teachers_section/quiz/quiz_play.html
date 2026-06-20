@@ -399,6 +399,8 @@ const API_BASE = LINGUA.base+ '/api';
 // ── Read quiz ID from URL ─────────────────────────────────────────────────
 const urlParams = new URLSearchParams(window.location.search);
 const quizId = urlParams.get('id');
+const classIdParam = urlParams.get('classId');
+
 
 // ── State ─────────────────────────────────────────────────────────────────
 let quizData  = null;
@@ -734,9 +736,21 @@ function restartQuiz() {
   render();
 }
 
+function getDashboardUrl() {
+  const roleId = localStorage.getItem('role_id');
+  if (roleId === '1') {
+    // Student — return to their class page if we know which class, otherwise their dashboard
+    return classIdParam
+      ? `../../student_class_details.html?id=${encodeURIComponent(classIdParam)}`
+      : '../../dashboard.html';
+  }
+  // Teacher (or unknown role) — existing behavior
+  return 'quiz_dashboard.html';
+}
+
 function goBack() {
   stopFireworks();
-  location.href = 'quiz_dashboard.html';
+  location.href = getDashboardUrl();
 }
 
 function confirmBack() {
