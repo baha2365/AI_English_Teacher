@@ -150,4 +150,35 @@ router.get('/classes/:id/reading-tasks', authenticate, authorizeRole(ROLE_IDS.st
   }
 });
 
+// ─── GET /api/student/classes/:id/quizzes ──────────────────────────────────────
+// List quizzes exposed to a class — only if the student is enrolled.
+router.get('/classes/:id/quizzes', authenticate, authorizeRole(ROLE_IDS.student), async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows: enrolled } = await pool.query(
+      `SELECT 1 FROM class_enrollments WHERE class_id = $1 AND student_id = $2`,
+      [id, req.userId]
+    );
+    if (!enrolled.length) {
+      return res.status(403).json({ success: false, message: 'You are not enrolled in this class.' });
+    }
+
+    const { rows } = await pool.query(
+      `SELECT q.id, q.title, q.description, cqa.assigned_at,
+              COUNT(qq.id)::int AS question_count
+         FROM class_quiz_assignments cqa
+         JOIN quizzes q ON q.id = cqa.quiz_id
+         LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
+        WHERE cqa.class_id = $1
+        GROUP BY q.id, cqa.assigned_at
+        ORDER BY cqa.assigned_at DESC`,
+      [id]
+    );
+    return res.json({ success: true, quizzes: rows });
+  } catch (err) {
+    console.error('List class quizzes (student) error:', err);
+    return res.status(500).json({ success: false, message: 'Could not fetch quizzes.' });
+  }
+});
+
 module.exports = router;
