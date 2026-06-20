@@ -24,6 +24,10 @@
       --reading-bg:   rgba(46,158,143,0.12);
       --reading-bd:   rgba(46,158,143,0.28);
       --reading-glow: rgba(46,158,143,0.4);
+      --quiz:      #4F6DF5;
+      --quiz-bg:   rgba(79,109,245,0.12);
+      --quiz-bd:   rgba(79,109,245,0.28);
+      --quiz-glow: rgba(79,109,245,0.4);
     }
     html { scroll-behavior: smooth; }
     body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; line-height:1.5; -webkit-font-smoothing:antialiased; }
@@ -334,6 +338,33 @@
         color:var(--reading); background:var(--reading-bg); border:1px solid var(--reading-bd);
         padding:.15rem .5rem; border-radius:20px; flex-shrink:0;
       }
+
+      .quiz-row {
+        display:grid; grid-template-columns: 1fr 130px 100px 90px;
+        align-items:center; gap:1rem; padding:.85rem 1.3rem .85rem 1.5rem;
+        border-bottom:1px solid var(--border); animation: rowIn .35s cubic-bezier(.22,1,.36,1) both;
+      }
+      .quiz-row:last-child { border-bottom:none; }
+      .quiz-row:hover { background:rgba(212,168,83,0.028); }
+      .quiz-title { font-size:.88rem; font-weight:600; color:var(--text); }
+      .quiz-qcount, .quiz-date { font-size:.7rem; color:var(--text-3); }
+
+      .quiz-pick-row {
+        display:flex; align-items:center; gap:.7rem; padding:.7rem .9rem;
+        background:rgba(0,0,0,0.2); border:1px solid var(--border-2); border-radius:9px;
+        cursor:pointer; transition:border-color .15s, background .15s;
+      }
+      .quiz-pick-row:hover { border-color: var(--quiz); }
+      .quiz-pick-row.checked { border-color: var(--quiz); background: var(--quiz-bg); }
+      .quiz-pick-row input[type=checkbox] { width:16px; height:16px; accent-color: var(--quiz); flex-shrink:0; }
+      .quiz-pick-info { flex:1; min-width:0; }
+      .quiz-pick-title { font-size:.85rem; font-weight:600; color:var(--text); }
+      .quiz-pick-meta { font-size:.68rem; color:var(--text-3); margin-top:.1rem; }
+      .quiz-pick-exposed-tag {
+        font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+        color:var(--quiz); background:var(--quiz-bg); border:1px solid var(--quiz-bd);
+        padding:.15rem .5rem; border-radius:20px; flex-shrink:0;
+      }
   </style>
 </head>
 <body>
@@ -436,6 +467,29 @@
   <div class="roster-panel" id="readingPanel"></div>
 </div>
 
+<!-- ═══════════════════════════════════════
+     QUIZZES SECTION
+═══════════════════════════════════════ -->
+<div class="section-bar">
+  <span class="section-label">📝 Quizzes</span>
+  <button class="btn-create" id="openExposeQuizBtn"
+    style="background:linear-gradient(135deg,var(--quiz),#3450C2);box-shadow:0 4px 18px var(--quiz-glow),inset 0 1px 0 rgba(255,255,255,0.12);">
+    <span class="ic">+</span>Expose Quiz
+  </button>
+</div>
+
+<div id="quizLoadingState" style="display:flex;align-items:center;gap:.75rem;padding:2rem;color:var(--text-3);font-size:.84rem;">
+  <div class="spinner dark"></div>Loading quizzes…
+</div>
+<div id="quizEmptyState" style="display:none;text-align:center;padding:2.5rem 1.5rem;border:1px dashed var(--border-2);border-radius:var(--radius);background:var(--surface);margin-bottom:2rem;">
+  <div style="font-size:1.8rem;margin-bottom:.6rem;opacity:.7;">📝</div>
+  <div style="font-size:.92rem;font-weight:600;color:var(--text-2);margin-bottom:.25rem;">No quizzes exposed</div>
+  <div style="font-size:.78rem;color:var(--text-3);">Expose a quiz so students can see and play it.</div>
+</div>
+<div id="quizListWrap" style="display:none;margin-bottom:2rem;">
+  <div class="roster-panel" id="quizPanel"></div>
+</div>
+
   <!-- Section bar -->
   <div class="section-bar">
     <span class="section-label">Student Roster</span>
@@ -489,6 +543,32 @@
         <button class="btn-cancel-modal" id="exposeCancelBtn">Cancel</button>
         <button class="btn-submit-modal" id="exposeSubmitBtn"
           style="background:linear-gradient(135deg,var(--reading),#1F7A6E);">Expose Selected</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPOSE QUIZ MODAL -->
+<div class="modal-backdrop" id="exposeQuizModal" role="dialog" aria-modal="true" aria-label="Expose Quiz">
+  <div class="modal" id="exposeQuizModalCard">
+    <div class="modal-glow" aria-hidden="true"></div>
+    <div class="modal-top-border" aria-hidden="true"></div>
+    <button class="modal-x" id="exposeQuizModalXBtn" aria-label="Close">✕</button>
+    <div class="modal-header">
+      <div class="modal-icon-wrap" aria-hidden="true">📝</div>
+      <div class="modal-title">Expose Quizzes</div>
+      <div class="modal-sub">Select one or more of your quizzes to make visible to this class.</div>
+    </div>
+    <div class="modal-body">
+      <div id="exposeQuizList" style="display:flex;flex-direction:column;gap:.5rem;max-height:320px;overflow-y:auto;"></div>
+      <div class="modal-inline-err" id="exposeQuizErr"></div>
+    </div>
+    <div class="modal-footer">
+      <div class="footer-left"></div>
+      <div class="footer-right">
+        <button class="btn-cancel-modal" id="exposeQuizCancelBtn">Cancel</button>
+        <button class="btn-submit-modal" id="exposeQuizSubmitBtn"
+          style="background:linear-gradient(135deg,var(--quiz),#3450C2);">Expose Selected</button>
       </div>
     </div>
   </div>
@@ -674,6 +754,10 @@ socketScript.onload = () => {
     socket.on('reading_unassigned', () => { loadReadingTasks(); });
     socket.on('game_started', () => { checkActiveGame(); });
     socket.on('game_ended',   () => { setGameBannerIdle(); });
+
+    socket.on('quiz_assigned', () => { loadClassQuizzes(); });
+    socket.on('quiz_unassigned', () => { loadClassQuizzes(); });
+
     socket.on('game_state',   ({ session }) => {
       if (session && session.status !== 'ended' && !activeSession) {
         setGameBannerActive(session);
@@ -828,7 +912,7 @@ document.addEventListener('keydown', e => {
     if(document.getElementById('enrollModal').classList.contains('open')) closeEnroll();
     if(document.getElementById('confirmOverlay').classList.contains('open')) closeConfirm();
     if(document.getElementById('exposeModal').classList.contains('open')) closeExposeModal();
-
+    if(document.getElementById('exposeQuizModal').classList.contains('open')) closeExposeQuizModal();
   }
 });
 
@@ -1123,6 +1207,158 @@ document.getElementById('exposeCancelBtn').addEventListener('click', closeExpose
 document.getElementById('exposeModalXBtn').addEventListener('click', closeExposeModal);
 document.getElementById('exposeModal').addEventListener('click', function(e){ if(e.target===this) closeExposeModal(); });
 
+
+/* ══════════════════════════════════════
+   QUIZZES
+══════════════════════════════════════ */
+const QUIZ_API       = `${LINGUA.base}/api/quizzes`;
+const CLASS_QUIZ_URL = `${CLASS_URL}/quizzes`;
+let exposedQuizzes    = [];
+let allTeacherQuizzes = [];
+let selectedQuizIds   = new Set();
+
+async function loadClassQuizzes() {
+  const loading = document.getElementById('quizLoadingState');
+  const empty   = document.getElementById('quizEmptyState');
+  const wrap    = document.getElementById('quizListWrap');
+  loading.style.display = 'flex'; empty.style.display = 'none'; wrap.style.display = 'none';
+  try {
+    const res  = await fetch(CLASS_QUIZ_URL, { headers: authH() });
+    const data = await res.json();
+    loading.style.display = 'none';
+    if (!res.ok || !data.success) { showFeedback(data.message || 'Failed to load quizzes.', 'err'); return; }
+    exposedQuizzes = data.quizzes || [];
+    renderClassQuizzes();
+  } catch {
+    loading.style.display = 'none';
+    showFeedback('Could not reach the server.', 'err');
+  }
+}
+
+function renderClassQuizzes() {
+  const empty = document.getElementById('quizEmptyState');
+  const wrap  = document.getElementById('quizListWrap');
+  const panel = document.getElementById('quizPanel');
+  if (!exposedQuizzes.length) { empty.style.display = 'block'; wrap.style.display = 'none'; return; }
+  empty.style.display = 'none'; wrap.style.display = 'block';
+  panel.innerHTML = exposedQuizzes.map(q => `
+    <div class="quiz-row" id="quiz-${q.id}">
+      <div class="quiz-title">${escHtml(q.title)}</div>
+      <div class="quiz-qcount">❓ ${q.question_count} question${q.question_count !== 1 ? 's' : ''}</div>
+      <div class="quiz-date">${new Date(q.assigned_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div>
+      <div class="student-action"><button class="btn-ghost-sm danger" onclick="removeClassQuiz(${q.id})">× Remove</button></div>
+    </div>`).join('');
+}
+
+async function removeClassQuiz(quizId) {
+  try {
+    const res  = await fetch(`${CLASS_QUIZ_URL}/${quizId}`, { method:'DELETE', headers: authH() });
+    const data = await res.json();
+    if (!res.ok || !data.success) { showFeedback(data.message || 'Could not remove quiz.', 'err'); return; }
+    exposedQuizzes = exposedQuizzes.filter(q => q.id !== quizId);
+    renderClassQuizzes();
+    showFeedback('Quiz removed from class.', 'ok');
+  } catch { showFeedback('Server error.', 'err'); }
+}
+
+async function openExposeQuizModal() {
+  selectedQuizIds = new Set();
+  document.getElementById('exposeQuizModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('exposeQuizErr').classList.remove('show');
+  const listEl = document.getElementById('exposeQuizList');
+  listEl.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--text-3);font-size:.8rem;"><span class="spinner dark"></span> Loading your quizzes…</div>';
+  try {
+    const res  = await fetch(QUIZ_API, { headers: authH() });
+    const data = await res.json();
+    if (!res.ok || !data.success) { listEl.innerHTML = `<div style="color:var(--error);font-size:.82rem;">Could not load quizzes.</div>`; return; }
+    allTeacherQuizzes = data.quizzes || [];
+    renderExposeQuizList();
+  } catch {
+    listEl.innerHTML = `<div style="color:var(--error);font-size:.82rem;">Could not reach the server.</div>`;
+  }
+}
+
+function renderExposeQuizList() {
+  const listEl = document.getElementById('exposeQuizList');
+  const exposedIds = new Set(exposedQuizzes.map(q => q.id));
+  if (!allTeacherQuizzes.length) {
+    listEl.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--text-3);font-size:.82rem;">You haven't created any quizzes yet. <a href="create_quiz.html" style="color:var(--quiz);">Create one</a>.</div>`;
+    return;
+  }
+  listEl.innerHTML = allTeacherQuizzes.map(q => {
+    const already = exposedIds.has(q.id);
+    return `
+      <label class="quiz-pick-row" id="quizpick-${q.id}" style="${already ? 'opacity:.5;cursor:default;' : ''}">
+        <input type="checkbox" data-quiz-id="${q.id}" ${already ? 'disabled' : ''} onchange="toggleQuizPick(${q.id}, this)">
+        <div class="quiz-pick-info">
+          <div class="quiz-pick-title">${escHtml(q.title)}</div>
+          <div class="quiz-pick-meta">${q.question_count} question${q.question_count !== 1 ? 's' : ''}</div>
+        </div>
+        ${already ? '<span class="quiz-pick-exposed-tag">Already exposed</span>' : ''}
+      </label>`;
+  }).join('');
+}
+
+function toggleQuizPick(quizId, checkbox) {
+  const row = document.getElementById(`quizpick-${quizId}`);
+  if (checkbox.checked) { selectedQuizIds.add(quizId); row.classList.add('checked'); }
+  else { selectedQuizIds.delete(quizId); row.classList.remove('checked'); }
+}
+
+function closeExposeQuizModal() {
+  const modal = document.getElementById('exposeQuizModalCard');
+  const bd    = document.getElementById('exposeQuizModal');
+  modal.style.transition = 'transform .28s cubic-bezier(.55,0,.45,1),opacity .22s ease';
+  modal.style.transform  = 'scale(.9) translateY(20px)';
+  modal.style.opacity    = '0';
+  bd.style.transition    = 'opacity .28s ease';
+  bd.style.opacity       = '0';
+  setTimeout(() => {
+    bd.classList.remove('open'); bd.style.opacity=''; bd.style.transition='';
+    modal.style.transform=''; modal.style.opacity=''; modal.style.transition='';
+    document.body.style.overflow='';
+  }, 290);
+}
+
+document.getElementById('exposeQuizSubmitBtn').addEventListener('click', async () => {
+  const btn   = document.getElementById('exposeQuizSubmitBtn');
+  const errEl = document.getElementById('exposeQuizErr');
+  errEl.classList.remove('show');
+  if (!selectedQuizIds.size) {
+    errEl.textContent = 'Select at least one quiz.';
+    errEl.classList.add('show');
+    return;
+  }
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Exposing…`;
+  try {
+    const res  = await fetch(CLASS_QUIZ_URL, {
+      method:'POST', headers: authH(),
+      body: JSON.stringify({ quiz_ids: Array.from(selectedQuizIds) })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      errEl.textContent = data.message || 'Could not expose quizzes.';
+      errEl.classList.add('show');
+      btn.disabled = false; btn.textContent = 'Expose Selected';
+      return;
+    }
+    closeExposeQuizModal();
+    exposedQuizzes = data.quizzes;
+    renderClassQuizzes();
+    showFeedback('Quiz(zes) exposed to class.', 'ok');
+  } catch {
+    errEl.textContent = 'Server error.';
+    errEl.classList.add('show');
+  }
+  btn.disabled = false; btn.textContent = 'Expose Selected';
+});
+
+document.getElementById('openExposeQuizBtn').addEventListener('click', openExposeQuizModal);
+document.getElementById('exposeQuizCancelBtn').addEventListener('click', closeExposeQuizModal);
+document.getElementById('exposeQuizModalXBtn').addEventListener('click', closeExposeQuizModal);
+document.getElementById('exposeQuizModal').addEventListener('click', function(e){ if(e.target===this) closeExposeQuizModal(); });
+
 /* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
@@ -1137,6 +1373,7 @@ document.getElementById('exposeModal').addEventListener('click', function(e){ if
   loadStudents();
   checkActiveGame();
   loadReadingTasks();
+  loadClassQuizzes()
 })();
 </script>
 </body>
