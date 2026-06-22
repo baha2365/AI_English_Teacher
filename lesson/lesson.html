@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>LinguaAI — Vocabulary</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap&subset=cyrillic-ext" rel="stylesheet">  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap&subset=cyrillic-ext" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
   <style>
@@ -259,6 +260,46 @@
       z-index: 1;
     }
 
+    /* ── Audio button (English face only) ───────────────────── */
+    .audio-btn {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.18);
+      border: 1.5px solid rgba(255, 255, 255, 0.38);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      z-index: 3;          /* above ::before / ::after pseudo-elements */
+      padding: 0;
+    }
+    .audio-btn:hover {
+      background: rgba(255, 255, 255, 0.32);
+      border-color: rgba(255, 255, 255, 0.75);
+      transform: scale(1.1);
+    }
+    .audio-btn:active { transform: scale(0.93); }
+
+    /* Ripple animation while audio is playing */
+    .audio-btn.playing {
+      background: rgba(255, 255, 255, 0.40);
+      border-color: white;
+      animation: audioPulse 1s ease-in-out infinite;
+    }
+    @keyframes audioPulse {
+      0%, 100% { box-shadow: 0 0 0 0   rgba(255,255,255,0.55); }
+      50%       { box-shadow: 0 0 0 8px rgba(255,255,255,0);    }
+    }
+
+    .audio-btn svg  { width: 15px; height: 15px; flex-shrink: 0; }
+    .audio-btn.hidden { display: none; }
+
     /* ── Actions ── */
     .actions { display: flex; gap: 0.8rem; justify-content: center; margin-top: 0.4rem; }
     .btn-action { flex: 1; max-width: 200px; padding: 0.75rem 1.2rem; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
@@ -367,6 +408,23 @@
       <!-- FRONT: English -->
       <div class="card-face card-front">
         <div class="face-lang-badge">English</div>
+
+        <!--
+          Audio button — top-right corner of the English face only.
+          stopPropagation() prevents the click from also flipping the card.
+          Hidden by default; shown in showWord() when w.audio is present.
+        -->
+        <button class="audio-btn hidden" id="audioBtn"
+                onclick="playAudio(event)"
+                title="Hear pronunciation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+        </button>
+
         <div class="face-word" id="englishWord">—</div>
         <div class="flip-hint">
           <div class="flip-icon">↻</div>
@@ -374,7 +432,7 @@
         </div>
       </div>
 
-      <!-- BACK: Kazakh -->
+      <!-- BACK: Kazakh (no audio button here) -->
       <div class="card-face card-back">
         <div class="face-lang-badge">Kazakh</div>
         <div class="face-word" id="kazakhWord">—</div>
@@ -392,7 +450,7 @@
     <button class="btn-action btn-learned" id="learnedBtn" onclick="markLearned()" disabled>✓ Got it — Next</button>
   </div>
 
-  <!-- ── Complete banner (no Emma link — goes to Sentence Builder) ── -->
+  <!-- ── Complete banner ── -->
   <div class="complete-banner" id="completeBanner">
     <h2>🎉 Part complete!</h2>
     <p>You've learned all 3 words! Now practice building sentences with them.</p>
@@ -401,6 +459,7 @@
     </div>
   </div>
 </main>
+
 <script src="../config.js"></script>
 <script>
   const API   = LINGUA.auth;
@@ -409,10 +468,7 @@
 
   if (!token) { window.location.href = 'index.html'; }
 
-  // If the user came from the parts-chooser, this tells us exactly which
-  // part to open first. If it's missing (e.g. direct link, refresh), we
-  // fall back to the old behaviour of resuming at the first incomplete part.
-  const urlParams      = new URLSearchParams(window.location.search);
+  const urlParams       = new URLSearchParams(window.location.search);
   const requestedPartId = urlParams.get('part_id') ? parseInt(urlParams.get('part_id'), 10) : null;
 
   let user           = null;
@@ -423,6 +479,54 @@
   let learnedInPart  = new Set();
   let completedParts = new Set();
   let isFlipped      = false;
+
+  // ── Audio state ────────────────────────────────────────────
+  let currentAudioSrc = null;   // resolved URL for the current word's audio
+  let audioPlayer     = null;   // HTMLAudioElement reference while playing
+
+  // ── Play audio ─────────────────────────────────────────────
+  // Called by the speaker button. stopPropagation() keeps the card from flipping.
+  function playAudio(e) {
+    e.stopPropagation();
+    if (!currentAudioSrc) return;
+
+    // Restart if already playing
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      audioPlayer = null;
+    }
+
+    const btn = document.getElementById('audioBtn');
+    audioPlayer = new Audio(currentAudioSrc);
+
+    btn.classList.add('playing');
+
+    audioPlayer.onended = () => {
+      btn.classList.remove('playing');
+      audioPlayer = null;
+    };
+    audioPlayer.onerror = () => {
+      console.warn('Audio load error:', currentAudioSrc);
+      btn.classList.remove('playing');
+      audioPlayer = null;
+    };
+    audioPlayer.play().catch(() => {
+      btn.classList.remove('playing');
+      audioPlayer = null;
+    });
+  }
+
+  // ── Helper: stop any in-progress audio cleanly ─────────────
+  function stopAudio() {
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      audioPlayer = null;
+    }
+    const btn = document.getElementById('audioBtn');
+    if (btn) btn.classList.remove('playing');
+  }
 
   // ── Flip card ──────────────────────────────────────────────
   function flipCard() {
@@ -459,13 +563,14 @@
 
     if (!words[idx]) return;
     const w = words[idx];
+
     document.getElementById('englishWord').textContent = w.english;
     document.getElementById('kazakhWord').textContent  = w.kazakh;
     document.getElementById('kazakhSub').textContent   = w.transliteration || '';
     document.getElementById('learnedBtn').disabled     = true;
     document.getElementById('tapLabel').textContent    = 'Tap the card to reveal the Kazakh translation';
 
-    // ── Populate image card ──────────────────────────────────
+    // ── Image card ───────────────────────────────────────────
     const imageCard  = document.getElementById('imageCard');
     const imageInner = document.getElementById('imageCardInner');
 
@@ -475,7 +580,6 @@
         const filename = src.replace(/\\/g, '/').split('/').pop();
         src = LINGUA.base + `/uploads/${filename}`;
       }
-
       imageCard.classList.remove('no-image');
       imageInner.innerHTML = `
         <img src="${src}" alt="${w.english}"
@@ -483,6 +587,26 @@
       `;
     } else {
       imageCard.classList.add('no-image');
+    }
+
+    // ── Audio button ─────────────────────────────────────────
+    // Stop any audio from the previous word first.
+    stopAudio();
+
+    const audioBtn = document.getElementById('audioBtn');
+
+    if (w.audio) {
+      // Build the served URL from the stored path (same pattern as images).
+      let audioSrc = w.audio;
+      if (!audioSrc.startsWith('http')) {
+        const filename = audioSrc.replace(/\\/g, '/').split('/').pop();
+        audioSrc = LINGUA.base + `/audios/${filename}`;
+      }
+      currentAudioSrc = audioSrc;
+      audioBtn.classList.remove('hidden');
+    } else {
+      currentAudioSrc = null;
+      audioBtn.classList.add('hidden');
     }
 
     renderDots();
@@ -508,8 +632,13 @@
   // ── Load part ───────────────────────────────────────────────
   async function loadPart() {
     learnedInPart.clear();
-    currentWordIdx = 0;
-    isFlipped      = false;
+    currentWordIdx  = 0;
+    isFlipped       = false;
+    currentAudioSrc = null;
+
+    // Stop audio when switching parts
+    stopAudio();
+    document.getElementById('audioBtn').classList.add('hidden');
 
     const card = document.getElementById('flipCard');
     card.classList.remove('flipped');
@@ -537,8 +666,8 @@
     words.forEach((w, i) => {
       const dot = document.createElement('div');
       dot.className = 'word-dot';
-      if (learnedInPart.has(w.id))  dot.classList.add('learned');
-      else if (i === currentWordIdx) dot.classList.add('active');
+      if (learnedInPart.has(w.id))   dot.classList.add('learned');
+      else if (i === currentWordIdx)  dot.classList.add('active');
       dot.onclick = () => showWord(i);
       container.appendChild(dot);
     });
@@ -558,7 +687,6 @@
     completedParts.add(part.id);
     updateProgress();
 
-    // Save session for reference
     localStorage.setItem('vocabSession', JSON.stringify({
       level:      user.level,
       partNumber: part.part_number,
@@ -566,9 +694,7 @@
       words:      words.map(w => ({ english: w.english, kazakh: w.kazakh })),
     }));
 
-    // ── Point the practice button at the sentence builder for THIS part ──
     document.getElementById('practiceBtn').href = `sentence_builder.html?part_id=${part.id}`;
-
     document.getElementById('completeBanner').classList.add('show');
     document.getElementById('nextPartBtn').disabled = currentPartIdx === parts.length - 1;
     document.getElementById('completeBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -582,9 +708,6 @@
   }
 
   function updateProgress() {
-    // Counted against THIS user's full part list — completedParts comes from
-    // /progress (global for the user) but every part in it already belongs
-    // to this same list, since a user only ever has one level's worth of parts.
     const total = parts.length;
     const done  = parts.filter(p => completedParts.has(p.id)).length;
     const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -615,8 +738,6 @@
 
       updateProgress();
 
-      // Prefer the part explicitly requested from the chooser; otherwise
-      // resume wherever the user left off.
       let startIdx = -1;
       if (requestedPartId !== null) {
         startIdx = parts.findIndex(p => p.id === requestedPartId);
