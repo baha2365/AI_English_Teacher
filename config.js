@@ -1,29 +1,36 @@
-// ─────────────────────────────────────────────────────────────────────────────
-//  LinguaAI — Central API Configuration
-//
-//  This file is loaded globally via <script src="/config.js"></script>.
-//  Change ONLY this file when the backend URL changes (e.g. new ngrok tunnel,
-//  staging → production, localhost → deployed).
-//
-//  Usage in any HTML file's <script>:
-//    const API   = LINGUA.auth;
-//    const VOCAB = LINGUA.vocab;
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * config.js
+ *
+ * Single source of truth for every API base URL used on the frontend.
+ * Loaded via <script src="/config.js"> before any page script runs.
+ *
+ * To switch between local dev and production, change BASE_URL only.
+ */
 
-// ngrok url: https://ravine-decrease-staleness.ngrok-free.dev
-// localhost url: http://localhost:3030
+const BASE_URL = 'http://localhost:3030';   // ← change to your prod URL before deploying
 
-const LINGUA = (() => {
-  const base = 'http://localhost:3030';
+const LINGUA = {
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  auth:      `${BASE_URL}/api/auth`,
 
-  return {
-    base,
-    auth:    `${base}/api/auth`,
-    vocab:   `${base}/api/vocab`,
-    quizzes: `${base}/api/quizzes`,
-    courses: `${base}/api/courses`,
-    student: `${base}/api/student`,
-    game: `${base}/api/game`,
-    reading: `${base}/api/reading`
-  };
-})();
+  // ── Vocabulary ────────────────────────────────────────────────────────────
+  vocab:     `${BASE_URL}/api/vocab`,
+
+  // ── Quizzes ───────────────────────────────────────────────────────────────
+  quizzes:   `${BASE_URL}/api/quizzes`,
+
+  // ── Courses & classes ─────────────────────────────────────────────────────
+  courses:   `${BASE_URL}/api/courses`,
+
+  // ── Student ───────────────────────────────────────────────────────────────
+  student:   `${BASE_URL}/api/student`,
+
+  // ── Game (ENGLISHPOLY) ────────────────────────────────────────────────────
+  game:      `${BASE_URL}/api/game`,
+
+  // ── Reading tasks ─────────────────────────────────────────────────────────
+  reading:   `${BASE_URL}/api/reading`,
+
+  // ── AI Teacher (Emma) ─────────────────────────────────────────────────────
+  aiTeacher: `${BASE_URL}/api/ai-teacher`,
+};
