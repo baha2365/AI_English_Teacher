@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Talk to Emma — LinguaAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:   #F5F0E8;
+      --ink:     #1A1612;
+      --rust:    #C4572A;
+      --sage:    #4A6741;
+      --gold:    #D4A853;
+      --muted:   #7A6E65;
+      --border:  #DDD5C8;
+      --s0:      #141210;   /* page bg */
+      --s1:      #201C18;   /* header / footer */
+      --s2:      #2A2520;   /* teacher bubbles */
+      --s3:      #322D28;   /* hover states */
+      --error:   #C0392B;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--s0);
+      color: var(--cream);
+      overflow: hidden;
+    }
+
+    /* ── App shell ─────────────────────────────────────────────────────────── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────────────── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.5rem;
+      background: var(--s1);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+      gap: 1rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      min-width: 0;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+    .back-link:hover { color: var(--cream); }
+
+    .divider { width: 1px; height: 18px; background: rgba(255,255,255,0.08); flex-shrink: 0; }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .brand-icon { font-size: 1.1rem; }
+    .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      color: var(--cream);
+    }
+    .brand-sep { color: rgba(255,255,255,0.18); font-size: 0.9rem; }
+    .teacher-label { font-size: 0.8rem; color: var(--gold); font-weight: 500; }
+
+    .online-dot {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.73rem;
+      color: var(--muted);
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--sage);
+      box-shadow: 0 0 5px rgba(74,103,65,0.9);
+    }
+
+    .level-badge {
+      background: rgba(212,168,83,0.12);
+      border: 1px solid rgba(212,168,83,0.28);
+      color: var(--gold);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 0.28rem 0.7rem;
+      border-radius: 20px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── Chat area ─────────────────────────────────────────────────────────── */
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      scroll-behavior: smooth;
+    }
+    .chat-area::-webkit-scrollbar { width: 3px; }
+    .chat-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+    /* Teacher intro card */
+    .teacher-intro {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 1.25rem;
+      background: var(--s2);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      flex-shrink: 0;
+      animation: fadeDown 0.4s ease both;
+    }
+
+    /* Emma avatar — the signature element: a ring that breathes when she speaks */
+    .avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--rust) 0%, #E0763A 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.45rem;
+      position: relative;
+      z-index: 1;
+    }
+    .avatar-ring {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      transition: border-color 0.3s;
+    }
+    .avatar-wrap.speaking .avatar-ring {
+      border-color: var(--gold);
+      animation: breathe 1.6s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50%       { transform: scale(1.12); opacity: 0.4; }
+    }
+
+    .teacher-info h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      color: var(--cream);
+      margin-bottom: 0.2rem;
+    }
+    .teacher-info p { font-size: 0.76rem; color: var(--muted); line-height: 1.5; }
+
+    /* Messages */
+    #messages { display: flex; flex-direction: column; gap: 0.85rem; }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 80%;
+      animation: msgIn 0.28s ease both;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.teacher { align-self: flex-start; }
+    .message.user    { align-self: flex-end; }
+
+    .msg-bubble {
+      padding: 0.8rem 1.05rem;
+      border-radius: 16px;
+      font-size: 0.88rem;
+      line-height: 1.68;
+      word-break: break-word;
+    }
+    .message.teacher .msg-bubble {
+      background: var(--s2);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-bottom-left-radius: 4px;
+      color: var(--cream);
+      border-left: 2px solid rgba(196,87,42,0.4);
+    }
+    .message.user .msg-bubble {
+      background: var(--rust);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-meta {
+      font-size: 0.66rem;
+      color: rgba(255,255,255,0.2);
+      margin-top: 0.28rem;
+    }
+    .message.user .msg-meta { text-align: right; }
+
+    /* Typing indicator */
+    .typing {
+      display: none;
+      align-self: flex-start;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--s2);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      border-left: 2px solid rgba(196,87,42,0.4);
+      animation: msgIn 0.28s ease both;
+    }
+    .typing.visible { display: flex; }
+
+    .typing-dots { display: flex; gap: 4px; align-items: center; }
+    .typing-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: dotBounce 1.3s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.18s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes dotBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+      30%           { transform: translateY(-5px); opacity: 1; }
+    }
+    .typing-label { font-size: 0.73rem; color: var(--muted); }
+
+    /* ── Topic chips (shown until first real message) ──────────────────────── */
+    .topics-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      padding: 0.6rem 1.5rem 0;
+      flex-shrink: 0;
+    }
+    .topic-chip {
+      background: var(--s2);
+      border: 1px solid rgba(255,255,255,0.09);
+      color: #C8BFB5;
+      font-size: 0.76rem;
+      font-family: 'DM Sans', sans-serif;
+      padding: 0.38rem 0.82rem;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .topic-chip:hover {
+      background: rgba(196,87,42,0.18);
+      border-color: rgba(196,87,42,0.4);
+      color: var(--gold);
+    }
+    .topic-chip:disabled { opacity: 0.4; cursor: default; }
+
+    /* ── Control bar ───────────────────────────────────────────────────────── */
+    .control-bar {
+      flex-shrink: 0;
+      background: var(--s1);
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 0.9rem 1.5rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    /* Status line */
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      height: 18px;
+    }
+    .status-text {
+      font-size: 0.76rem;
+      color: var(--muted);
+      transition: color 0.25s;
+    }
+    .status-text.listening { color: #e55c5c; }
+    .status-text.thinking  { color: var(--gold); }
+    .status-text.speaking  { color: var(--sage); }
+
+    /* Speaking bars (next to status when Emma talks) */
+    .speak-bars { display: none; gap: 2px; align-items: flex-end; height: 14px; }
+    .speak-bars.visible { display: flex; }
+    .speak-bar {
+      width: 3px; border-radius: 1.5px;
+      background: var(--sage);
+      animation: speakBar 1s ease-in-out infinite;
+    }
+    .speak-bar:nth-child(1) { height: 6px;  animation-delay: 0s; }
+    .speak-bar:nth-child(2) { height: 12px; animation-delay: 0.12s; }
+    .speak-bar:nth-child(3) { height: 8px;  animation-delay: 0.24s; }
+    .speak-bar:nth-child(4) { height: 14px; animation-delay: 0.06s; }
+    .speak-bar:nth-child(5) { height: 5px;  animation-delay: 0.18s; }
+    @keyframes speakBar {
+      0%, 100% { transform: scaleY(0.3); }
+      50%       { transform: scaleY(1); }
+    }
+
+    /* Mic button */
+    .mic-wrap { position: relative; }
+
+    .mic-btn {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      border: none;
+      background: var(--rust);
+      color: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.12s;
+      position: relative;
+      z-index: 1;
+    }
+    .mic-btn svg { pointer-events: none; }
+
+    .mic-btn:hover:not(:disabled) { background: #d4622f; transform: scale(1.04); }
+    .mic-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    .mic-btn:disabled {
+      background: var(--s3);
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    /* Recording state — twin pulse rings */
+    .mic-btn.recording { background: #d63030; }
+    .mic-btn.recording::before,
+    .mic-btn.recording::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid #d63030;
+      animation: micPulse 2s ease-out infinite;
+    }
+    .mic-btn.recording::after { animation-delay: 0.7s; }
+    @keyframes micPulse {
+      0%   { transform: scale(1); opacity: 0.75; }
+      100% { transform: scale(2.3); opacity: 0; }
+    }
+
+    /* Real-time waveform canvas */
+    #waveformCanvas {
+      display: none;
+      border-radius: 6px;
+      width: 220px;
+      height: 36px;
+    }
+
+    .mic-hint {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.18);
+      text-align: center;
+    }
+
+    /* ── Loading overlay ───────────────────────────────────────────────────── */
+    .loader {
+      position: fixed;
+      inset: 0;
+      background: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 200;
+      transition: opacity 0.5s;
+    }
+    .loader.gone { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid rgba(255,255,255,0.07);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-label { font-size: 0.82rem; color: var(--muted); }
+
+    /* ── Toast ─────────────────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 130px;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--s2);
+      border: 1px solid rgba(196,87,42,0.35);
+      color: var(--cream);
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      z-index: 100;
+      max-width: min(90vw, 360px);
+      text-align: center;
+      line-height: 1.45;
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Animations ────────────────────────────────────────────────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .app-header { padding: 0.75rem 1rem; }
+      .brand-name, .teacher-label { font-size: 0.85rem; }
+      .chat-area { padding: 1rem; }
+      .topics-row { padding: 0.5rem 1rem 0; }
+      .control-bar { padding: 0.75rem 1rem 1rem; }
+      .message { max-width: 92%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-label" id="loaderLabel">Connecting to Emma…</div>
+</div>
+
+<!-- Toast notifications -->
+<div class="toast" id="toast"></div>
+
+<div class="app">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="header-left">
+      <a href="dashboard.html" class="back-link">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        Dashboard
+      </a>
+      <div class="divider"></div>
+      <div class="brand-row">
+        <span class="brand-icon">🎓</span>
+        <span class="brand-name">LinguaAI</span>
+        <span class="brand-sep">·</span>
+        <span class="teacher-label">Emma</span>
+      </div>
+      <div class="online-dot">
+        <div class="dot"></div>
+        <span>Online</span>
+      </div>
+    </div>
+    <div class="level-badge" id="levelBadge">—</div>
+  </header>
+
+  <!-- ── Chat ────────────────────────────────────────────────────────────── -->
+  <main class="chat-area" id="chatArea">
+
+    <!-- Teacher intro card -->
+    <div class="teacher-intro">
+      <div class="avatar-wrap" id="avatarWrap">
+        <div class="avatar">👩‍🏫</div>
+        <div class="avatar-ring"></div>
+      </div>
+      <div class="teacher-info">
+        <h3>Emma — AI English Teacher</h3>
+        <p id="introSubtext">Personalizing your session…</p>
+      </div>
+    </div>
+
+    <!-- Message list -->
+    <div id="messages"></div>
+
+    <!-- Typing indicator -->
+    <div class="typing" id="typingEl">
+      <div class="typing-dots">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+      <span class="typing-label">Emma is thinking…</span>
+    </div>
+
+  </main>
+
+  <!-- ── Topic chips ──────────────────────────────────────────────────────── -->
+  <div class="topics-row" id="topicsRow">
+    <button class="topic-chip" onclick="pickTopic(this)">Daily conversation</button>
+    <button class="topic-chip" onclick="pickTopic(this)">Introduce myself</button>
+    <button class="topic-chip" onclick="pickTopic(this)">Pronunciation help</button>
+    <button class="topic-chip" onclick="pickTopic(this)">Vocabulary quiz</button>
+    <button class="topic-chip" onclick="pickTopic(this)">Tell me a story</button>
+    <button class="topic-chip" onclick="pickTopic(this)">Correct my grammar</button>
+  </div>
+
+  <!-- ── Controls ─────────────────────────────────────────────────────────── -->
+  <footer class="control-bar">
+
+    <div class="status-line">
+      <div class="speak-bars" id="speakBars">
+        <div class="speak-bar"></div>
+        <div class="speak-bar"></div>
+        <div class="speak-bar"></div>
+        <div class="speak-bar"></div>
+        <div class="speak-bar"></div>
+      </div>
+      <span class="status-text" id="statusText">Tap the mic to speak</span>
+    </div>
+
+    <div class="mic-wrap">
+      <button class="mic-btn" id="micBtn" onclick="toggleRecord()" title="Click to speak">
+        <!-- Mic icon -->
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <rect x="9" y="2" width="6" height="11" rx="3" fill="currentColor"/>
+          <path d="M5 10v2a7 7 0 0 0 14 0v-2" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" fill="none"/>
+          <line x1="12" y1="21" x2="12" y2="19" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round"/>
+          <line x1="9" y1="23" x2="15" y2="23" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Real-time audio waveform (shown while recording) -->
+    <canvas id="waveformCanvas" width="220" height="36"></canvas>
+
+    <div class="mic-hint" id="micHint">Tap to speak · Tap again to send</div>
+  </footer>
+
+</div><!-- .app -->
+
+<script src="/config.js"></script>
+<script>
+// ─── Bootstrap ────────────────────────────────────────────────────────────────
+const token = localStorage.getItem('token');
+if (!token) { window.location.href = 'index.html'; }
+
+const BASE = (typeof LINGUA !== 'undefined' && LINGUA.aiTeacher)
+  ? LINGUA.aiTeacher
+  : `${location.origin}/api/ai-teacher`;
+
+// ─── State ────────────────────────────────────────────────────────────────────
+// Possible values: idle | recording | transcribing | thinking | speaking
+let appState = 'idle';
+
+let history      = [];   // [{ role: 'user'|'assistant', content }]
+let topicsGone   = false;
+
+// Recording
+let recorder     = null;
+let chunks       = [];
+let micStream    = null;
+let audioCtx     = null;
+let analyser     = null;
+let rafId        = null;
+
+// Playback
+let currentAudio = null;
+
+// ─── DOM ─────────────────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const chatArea   = $('chatArea');
+const messagesEl = $('messages');
+const typingEl   = $('typingEl');
+const micBtn     = $('micBtn');
+const statusText = $('statusText');
+const speakBars  = $('speakBars');
+const avatarWrap = $('avatarWrap');
+const topicsRow  = $('topicsRow');
+const canvas     = $('waveformCanvas');
+const loader     = $('loader');
+const loaderLbl  = $('loaderLabel');
+const levelBadge = $('levelBadge');
+const introSub   = $('introSubtext');
+const toast      = $('toast');
+const micHint    = $('micHint');
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, ms = 3500) {
+  toast.textContent = msg;
+  toast.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), ms);
+}
+
+// ─── State machine ────────────────────────────────────────────────────────────
+const STATE_CFG = {
+  idle:         { mic: false, disabled: false, status: 'Tap the mic to speak',   cls: '',          hint: 'Tap to speak · Tap again to send', bars: false, avatar: false, canvas: false },
+  recording:    { mic: true,  disabled: false, status: '🔴 Listening…',          cls: 'recording', hint: 'Tap again to stop and send',        bars: false, avatar: false, canvas: true  },
+  transcribing: { mic: false, disabled: true,  status: 'Processing your voice…', cls: '',          hint: '',                                  bars: false, avatar: false, canvas: false },
+  thinking:     { mic: false, disabled: true,  status: 'Emma is thinking…',      cls: '',          hint: '',                                  bars: false, avatar: false, canvas: false },
+  speaking:     { mic: false, disabled: true,  status: 'Emma is speaking…',      cls: '',          hint: 'Playing response…',                 bars: true,  avatar: true,  canvas: false },
+};
+
+function setState(s) {
+  appState = s;
+  const c = STATE_CFG[s] || STATE_CFG.idle;
+
+  micBtn.className = 'mic-btn' + (c.mic ? ' recording' : '');
+  micBtn.disabled  = c.disabled;
+
+  statusText.className = 'status-text' + (
+    s === 'recording' ? ' listening' : s === 'thinking' || s === 'transcribing' ? ' thinking' : s === 'speaking' ? ' speaking' : ''
+  );
+  statusText.textContent = c.status;
+  micHint.textContent    = c.hint;
+
+  speakBars.classList.toggle('visible', c.bars);
+  avatarWrap.classList.toggle('speaking', c.avatar);
+  canvas.style.display = c.canvas ? 'block' : 'none';
+}
+
+// ─── Session init ─────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch(`${BASE}/session`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401) { localStorage.clear(); location.href = 'index.html'; return; }
+
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    const { name, level } = data;
+    levelBadge.textContent = level;
+    introSub.textContent   = `Level: ${level}`;
+
+    // Generate personalised greeting
+    loaderLbl.textContent = 'Emma is preparing your lesson…';
+    const first = (name || 'there').split(' ')[0];
+
+    const greeting = await callChat([{
+      role: 'user',
+      content: `My name is ${first}. Please greet me warmly, introduce yourself as Emma, and ask what I'd like to practise today.`,
+    }], /* silent */ true);
+
+    // Seed history with just the greeting — keep the init prompt invisible
+    history = [{ role: 'assistant', content: greeting }];
+
+    addMsg('teacher', greeting);
+    await playTTS(greeting);
+
+    loader.classList.add('gone');
+    setTimeout(() => loader.remove(), 600);
+  } catch (err) {
+    console.error('init error:', err);
+    loaderLbl.textContent = 'Could not connect. Refresh to retry.';
+  }
+}
+
+// ─── API helpers ──────────────────────────────────────────────────────────────
+async function callChat(messages, silent = false) {
+  if (!silent) setState('thinking');
+  typingEl.classList.add('visible');
+  scrollDown();
+
+  const res = await fetch(`${BASE}/chat`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body:    JSON.stringify({ messages }),
+  });
+
+  typingEl.classList.remove('visible');
+
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Chat error');
+  return data.reply;
+}
+
+async function playTTS(text) {
+  setState('speaking');
+  try {
+    const res = await fetch(`${BASE}/speak`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body:    JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error('TTS request failed');
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+
+    currentAudio?.pause();
+    currentAudio = new Audio(url);
+
+    await new Promise((resolve, reject) => {
+      currentAudio.onended = resolve;
+      currentAudio.onerror = reject;
+      currentAudio.play().catch(reject);
+    });
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.warn('TTS playback skipped:', err.message);
+    // Non-fatal — the text is still visible in the chat
+  }
+  setState('idle');
+}
+
+// ─── Recording ────────────────────────────────────────────────────────────────
+async function toggleRecord() {
+  if (appState === 'recording') { stopRecord(); return; }
+  if (appState !== 'idle') return;
+
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    showToast(
+      err.name === 'NotAllowedError'
+        ? 'Microphone access denied. Enable it in your browser settings.'
+        : 'Could not access microphone.'
+    );
+    return;
+  }
+
+  // Web Audio analyser for real waveform
+  audioCtx = new AudioContext();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 128;
+  audioCtx.createMediaStreamSource(micStream).connect(analyser);
+
+  chunks = [];
+
+  const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+    ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+
+  recorder = new MediaRecorder(micStream, mime ? { mimeType: mime } : {});
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  recorder.onstop = onRecordStop;
+  recorder.start(100);
+
+  setState('recording');
+  drawWave();
+}
+
+function stopRecord() {
+  if (recorder?.state !== 'inactive') recorder.stop();
+  micStream?.getTracks().forEach(t => t.stop());
+  cancelAnimationFrame(rafId);
+  audioCtx?.close();
+  setState('transcribing');
+}
+
+async function onRecordStop() {
+  if (!chunks.length) { setState('idle'); showToast('No audio captured. Please try again.'); return; }
+
+  const mime = recorder?.mimeType || 'audio/webm';
+  const blob = new Blob(chunks, { type: mime });
+
+  if (blob.size < 800) { setState('idle'); showToast('Recording too short. Hold the mic and speak.'); return; }
+
+  try {
+    const ext  = mime.includes('ogg') ? 'ogg' : mime.includes('mp4') ? 'mp4' : 'webm';
+    const form = new FormData();
+    form.append('audio', blob, `rec.${ext}`);
+
+    const tRes  = await fetch(`${BASE}/transcribe`, {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body:    form,
+    });
+    const tData = await tRes.json();
+    if (!tData.success) throw new Error(tData.message);
+
+    const userText = (tData.text || '').trim();
+    if (!userText || tData.empty) {
+      setState('idle');
+      showToast("I couldn't hear that clearly. Please try again.");
+      return;
+    }
+
+    hideTopics();
+    addMsg('user', userText);
+    history.push({ role: 'user', content: userText });
+    trimHistory();
+
+    const reply = await callChat(history);
+    addMsg('teacher', reply);
+    history.push({ role: 'assistant', content: reply });
+    trimHistory();
+
+    await playTTS(reply);
+
+  } catch (err) {
+    console.error('onRecordStop error:', err);
+    showToast('Something went wrong. Please try again.');
+    setState('idle');
+  }
+}
+
+// ─── Topic chips ──────────────────────────────────────────────────────────────
+async function pickTopic(btn) {
+  if (appState !== 'idle') return;
+  const topic = btn.textContent.trim();
+  hideTopics();
+
+  const userMsg = `I'd like to practise: ${topic}`;
+  addMsg('user', userMsg);
+  history.push({ role: 'user', content: userMsg });
+  trimHistory();
+
+  try {
+    const reply = await callChat(history);
+    addMsg('teacher', reply);
+    history.push({ role: 'assistant', content: reply });
+    trimHistory();
+    await playTTS(reply);
+  } catch (err) {
+    showToast('Could not get a response. Please try again.');
+    setState('idle');
+  }
+}
+
+function hideTopics() {
+  if (!topicsGone) { topicsRow.style.display = 'none'; topicsGone = true; }
+}
+
+// ─── Waveform canvas ──────────────────────────────────────────────────────────
+function drawWave() {
+  const ctx  = canvas.getContext('2d');
+  const W    = canvas.width;
+  const H    = canvas.height;
+  const buf  = analyser.frequencyBinCount;
+  const data = new Uint8Array(buf);
+  const barW = Math.max(2, (W / buf) * 2.2);
+
+  function frame() {
+    rafId = requestAnimationFrame(frame);
+    analyser.getByteFrequencyData(data);
+    ctx.clearRect(0, 0, W, H);
+
+    let x = 0;
+    for (let i = 0; i < buf; i++) {
+      const bH    = Math.max(2, (data[i] / 255) * H);
+      const alpha = 0.35 + (data[i] / 255) * 0.65;
+      ctx.fillStyle = `rgba(196, 87, 42, ${alpha})`;
+      ctx.beginPath();
+      // roundRect with fallback for older browsers
+      if (ctx.roundRect) {
+        ctx.roundRect(x, H - bH, barW, bH, 2);
+      } else {
+        ctx.rect(x, H - bH, barW, bH);
+      }
+      ctx.fill();
+      x += barW + 1;
+    }
+  }
+  frame();
+}
+
+// ─── Message helpers ──────────────────────────────────────────────────────────
+function addMsg(role, text) {
+  const el   = document.createElement('div');
+  el.className = `message ${role}`;
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  el.innerHTML = `
+    <div class="msg-bubble">${safe(text)}</div>
+    <div class="msg-meta">${role === 'teacher' ? 'Emma' : 'You'} · ${time}</div>
+  `;
+  messagesEl.appendChild(el);
+  scrollDown();
+}
+
+function scrollDown() {
+  requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; });
+}
+
+function safe(t) {
+  return t
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+}
+
+function trimHistory() {
+  if (history.length > 16) history = history.slice(history.length - 16);
+}
+
+// ─── Keyboard shortcut: Space to toggle record ────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.code !== 'Space') return;
+  if (document.activeElement?.tagName === 'INPUT') return;
+  e.preventDefault();
+  toggleRecord();
+});
+
+// ─── Go ───────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
