@@ -199,13 +199,9 @@
     .mic-btn:hover { background: #d4622f; transform: scale(1.04); }
     .mic-btn:active { transform: scale(0.96); }
 
-    /* ── Recording phase ────────────────────────────────────────────────────── */
-    .recording-timer {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.2rem; color: var(--cream);
-      letter-spacing: -0.02em; line-height: 1;
-    }
-    .recording-timer.warn { color: #e55c5c; }
+    /* ── Recording phase — countdown ring ───────────────────────────────────── */
+    #countdownRingWrap svg { display: block; overflow: visible; }
+    /* Arc transition is set inline so the duration can vary per sentence length */
 
     #waveformCanvas {
       width: 240px; height: 38px;
@@ -543,7 +539,7 @@
 
     <!-- ── Phase: recording ─────────────────────────────────────────────── -->
     <div class="phase-panel" id="phase-recording" style="display:none">
-      <div class="recording-timer" id="timer">0:00</div>
+      <div id="countdownRingWrap"></div>
       <canvas id="waveformCanvas" width="240" height="38"></canvas>
       <button class="stop-btn" id="stopBtn" onclick="stopRecording()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -577,7 +573,7 @@
         </button>
       </div>
 
-      <span class="action-hint" id="recordedHint">Listen first, then send</span>
+      <span class="action-hint" id="recordedHint">Listen to your recording, or send directly</span>
     </div>
 
     <!-- ── Phase: submitting ─────────────────────────────────────────────── -->
@@ -640,20 +636,18 @@ let phase       = 'loading';
 let results     = [];          // [{ sentenceId, expected, actual, score, passed }]
 
 // Recording
-let recorder         = null;
-let chunks           = [];
-let micStream        = null;
-let audioCtx         = null;
-let analyser         = null;
-let rafId            = null;
-let timerInterval    = null;
-let recordingSeconds = 0;
-let recordedBlob     = null;
-let recordedUrl      = null;
+let recorder      = null;
+let chunks        = [];
+let micStream     = null;
+let audioCtx      = null;
+let analyser      = null;
+let rafId         = null;
+let timerInterval = null;
+let recordedBlob  = null;
+let recordedUrl   = null;
 
 // Per-sentence flags
 let refAudioPlayed   = false;
-let recordingPlayed  = false;
 
 // ─── DOM helpers ─────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -711,10 +705,9 @@ async function init() {
 
 // ─── Load sentence ────────────────────────────────────────────────────────────
 function loadSentence(idx) {
-  currentIdx      = idx;
-  refAudioPlayed  = false;
-  recordingPlayed = false;
-  recordedBlob    = null;
+  currentIdx     = idx;
+  refAudioPlayed = false;
+  recordedBlob   = null;
   if (recordedUrl) { URL.revokeObjectURL(recordedUrl); recordedUrl = null; }
 
   const s = sentences[idx];
@@ -723,22 +716,31 @@ function loadSentence(idx) {
   $('sentenceEnglish').textContent = s.correct_sentence;
   $('headerCounter').textContent   = `${idx + 1} / ${sentences.length}`;
 
+  // ── Compute timeout from sentence word count ───────────────────────────────
+  const wordCount = s.correct_sentence.trim().split(/\s+/).filter(Boolean).length;
+  window._recordTimeout = wordCount <= 5  ? 4000
+                        : wordCount <= 10 ? 6000
+                        : wordCount <= 15 ? 8000
+                        : 10000;
+
   renderDots();
+
+  // Reset countdown ring from previous sentence
+  const ringWrap = $('countdownRingWrap');
+  if (ringWrap) ringWrap.innerHTML = '';
 
   // Reset recorded-phase UI
   const playbackBtn = $('playbackBtn');
   if (playbackBtn) {
-    playbackBtn.textContent = '▶ Listen to Yourself';
     playbackBtn.classList.remove('playing');
     playbackBtn.disabled = false;
-    // Re-attach SVG icon
     playbackBtn.innerHTML = `
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       Listen to Yourself`;
   }
   const sendBtn = $('sendBtn');
-  if (sendBtn) sendBtn.disabled = true;
-  $('recordedHint').textContent = 'Listen first, then send';
+  if (sendBtn) sendBtn.disabled = true;   // enabled again in onRecordStop
+  $('recordedHint').textContent = 'Listen to your recording, or send directly';
 
   if (s.audio_url) {
     setupRefAudio(s);
@@ -848,8 +850,9 @@ async function startRecording() {
   startTimer();
   drawWave();
 
-  // Auto-stop after 30 s
-  setTimeout(() => { if (phase === 'recording') stopRecording(); }, 30000);
+  // Auto-stop after the sentence-length-based timeout (4 – 10 seconds)
+  const timeout = window._recordTimeout || 6000;
+  setTimeout(() => { if (phase === 'recording') stopRecording(); }, timeout);
 }
 
 function stopRecording() {
@@ -877,8 +880,8 @@ function onRecordStop() {
   }
 
   if (recordedUrl) URL.revokeObjectURL(recordedUrl);
-  recordedUrl    = URL.createObjectURL(recordedBlob);
-  recordingPlayed = false;
+  recordedUrl = URL.createObjectURL(recordedBlob);
+  $('sendBtn').disabled = false;   // listening is optional — user decides
   setPhase('recorded');
 }
 
@@ -906,13 +909,6 @@ function playRecording() {
     btn.classList.remove('playing');
   };
   audio.play().catch(() => { btn.disabled = false; btn.classList.remove('playing'); });
-
-  // Unlock Send as soon as they start playback
-  if (!recordingPlayed) {
-    recordingPlayed = true;
-    $('sendBtn').disabled = false;
-    $('recordedHint').textContent = 'Ready to send? Tap Send.';
-  }
 }
 
 // ─── Send for scoring ─────────────────────────────────────────────────────────
@@ -1120,17 +1116,52 @@ function renderDots() {
   }).join('');
 }
 
-// ─── Timer ───────────────────────────────────────────────────────────────────
+// ─── Countdown ring timer ────────────────────────────────────────────────────
+// Builds an SVG ring that drains clockwise over the allotted recording time.
+// The colour shifts gold → red in the final 2 seconds.
 function startTimer() {
-  recordingSeconds = 0;
-  $('timer').textContent = '0:00';
-  $('timer').classList.remove('warn');
+  const totalSecs = Math.round((window._recordTimeout || 6000) / 1000);
+  let remaining   = totalSecs;
+
+  const r    = 34;
+  const circ = +(2 * Math.PI * r).toFixed(2);
+
+  // Build the initial ring at 100 % fill
+  $('countdownRingWrap').innerHTML = `
+    <svg width="94" height="94" viewBox="0 0 94 94">
+      <!-- track -->
+      <circle cx="47" cy="47" r="${r}" fill="none"
+              stroke="rgba(255,255,255,0.07)" stroke-width="6"/>
+      <!-- draining arc — starts full, shrinks each second -->
+      <circle id="cdArc" cx="47" cy="47" r="${r}" fill="none"
+              stroke="var(--gold)" stroke-width="6"
+              stroke-dasharray="${circ}" stroke-dashoffset="0"
+              stroke-linecap="round" transform="rotate(-90 47 47)"/>
+      <!-- centre: remaining seconds -->
+      <text id="cdNum" x="47" y="52" text-anchor="middle"
+            font-family="Playfair Display,serif" font-size="22" font-weight="700"
+            fill="white">${remaining}</text>
+    </svg>`;
+
+  // Tick every second — update arc + number with a smooth CSS transition
   timerInterval = setInterval(() => {
-    recordingSeconds++;
-    const m = Math.floor(recordingSeconds / 60);
-    const s = recordingSeconds % 60;
-    $('timer').textContent = `${m}:${s.toString().padStart(2, '0')}`;
-    if (recordingSeconds >= 25) $('timer').classList.add('warn');
+    remaining--;
+    const arc = document.getElementById('cdArc');
+    const num = document.getElementById('cdNum');
+    if (!arc || !num) return;
+
+    const filled  = Math.max(0, remaining / totalSecs);
+    const offset  = +(circ * (1 - filled)).toFixed(2);
+
+    // Smooth 1-second drain transition
+    arc.style.transition       = 'stroke-dashoffset 1s linear, stroke 0.4s';
+    arc.style.strokeDashoffset = offset;
+
+    // Colour: gold → red in the last 2 seconds
+    arc.style.stroke = remaining <= 2 ? 'var(--rust)' : 'var(--gold)';
+    num.textContent  = Math.max(0, remaining);
+
+    if (remaining <= 0) stopTimer();
   }, 1000);
 }
 
