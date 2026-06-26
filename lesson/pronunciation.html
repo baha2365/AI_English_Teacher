@@ -167,25 +167,7 @@
       50%      { box-shadow: 0 0 0 8px rgba(212,168,83,0.08); }
     }
 
-    /* "I'm Ready" button */
-    .btn-ready {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      background: var(--rust); color: white;
-      border: none; border-radius: 10px;
-      padding: 0.78rem 1.8rem;
-      font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500;
-      cursor: pointer; transition: all 0.2s;
-    }
-    .btn-ready:hover:not(:disabled) { background: #d4622f; transform: translateY(-1px); }
-    .btn-ready:disabled { background: var(--s3); color: var(--muted); cursor: not-allowed; opacity: 0.55; }
-
-    /* Ready hint */
-    .listen-hint {
-      font-size: 0.73rem; color: rgba(255,255,255,0.22);
-      letter-spacing: 0.03em;
-    }
-
-    /* ── Mic button (ready phase) ────────────────────────────────────────────── */
+    /* ── Mic button ─────────────────────────────────────────────────────────── */
     .mic-wrap { position: relative; }
     .mic-btn {
       width: 82px; height: 82px;
@@ -497,29 +479,20 @@
       <div class="sentence-english" id="sentenceEnglish">—</div>
     </div>
 
-    <!-- ── Phase: listening ──────────────────────────────────────────────── -->
-    <div class="phase-panel" id="phase-listening">
-      <div class="phase-title">Listen carefully 👂</div>
-      <div class="phase-sub">Hear the sentence first, then you'll repeat it.</div>
+    <!-- ── Phase: practice (play + mic always together) ────────────────────── -->
+    <div class="phase-panel" id="phase-practice">
 
-      <button class="ref-play-btn" id="refPlayBtn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <polygon points="5 3 19 12 5 21 5 3"/>
-        </svg>
-        Play Sentence
-      </button>
+      <!-- Reference audio — only rendered when the sentence has an audio_url -->
+      <div id="refAudioWrap" style="display:none">
+        <button class="ref-play-btn" id="refPlayBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Play Sentence
+        </button>
+      </div>
 
-      <button class="btn-ready" id="btnReady" disabled onclick="goToReady()">
-        I'm Ready →
-      </button>
-      <span class="listen-hint" id="listenHint">Listen first, then tap "I'm Ready"</span>
-    </div>
-
-    <!-- ── Phase: ready ──────────────────────────────────────────────────── -->
-    <div class="phase-panel" id="phase-ready" style="display:none">
-      <div class="phase-title">🎤 Your turn to speak</div>
-      <div class="phase-sub">Repeat the sentence as clearly as you can.</div>
-
+      <!-- Mic — always available, no gate -->
       <div class="mic-wrap">
         <button class="mic-btn" id="micBtn" onclick="startRecording()" title="Start recording">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -534,7 +507,7 @@
         </button>
       </div>
 
-      <span class="action-hint">Tap the mic to start recording</span>
+      <span class="action-hint" id="practiceHint">Tap the mic to start recording</span>
     </div>
 
     <!-- ── Phase: recording ─────────────────────────────────────────────── -->
@@ -646,8 +619,7 @@ let timerInterval = null;
 let recordedBlob  = null;
 let recordedUrl   = null;
 
-// Per-sentence flags
-let refAudioPlayed   = false;
+// Per-sentence flags (none remaining — all gates removed)
 
 // ─── DOM helpers ─────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -663,7 +635,7 @@ function showToast(msg, ms = 3500) {
 }
 
 // ─── Phase management ─────────────────────────────────────────────────────────
-const PHASES = ['listening','ready','recording','recorded','submitting','result'];
+const PHASES = ['practice','recording','recorded','submitting','result'];
 function setPhase(p) {
   phase = p;
   PHASES.forEach(name => {
@@ -705,9 +677,8 @@ async function init() {
 
 // ─── Load sentence ────────────────────────────────────────────────────────────
 function loadSentence(idx) {
-  currentIdx     = idx;
-  refAudioPlayed = false;
-  recordedBlob   = null;
+  currentIdx   = idx;
+  recordedBlob = null;
   if (recordedUrl) { URL.revokeObjectURL(recordedUrl); recordedUrl = null; }
 
   const s = sentences[idx];
@@ -739,35 +710,42 @@ function loadSentence(idx) {
       Listen to Yourself`;
   }
   const sendBtn = $('sendBtn');
-  if (sendBtn) sendBtn.disabled = true;   // enabled again in onRecordStop
+  if (sendBtn) sendBtn.disabled = true;
   $('recordedHint').textContent = 'Listen to your recording, or send directly';
 
+  // ── Reference audio: show play button only when audio exists ──────────────
+  const refWrap = $('refAudioWrap');
   if (s.audio_url) {
+    refWrap.style.display = '';
     setupRefAudio(s);
-    setPhase('listening');
+    $('practiceHint').textContent = 'Play to hear it, then tap the mic to record';
   } else {
-    // No audio — go straight to ready
-    setPhase('ready');
+    refWrap.style.display = 'none';
+    $('practiceHint').textContent = 'Tap the mic to start recording';
   }
+
+  setPhase('practice');
 }
 
 // ─── Reference audio ──────────────────────────────────────────────────────────
 function setupRefAudio(sentence) {
-  // Reset ready button
-  const btnReady = $('btnReady');
-  btnReady.disabled = true;
-  $('listenHint').textContent = 'Listen first, then tap "I\'m Ready"';
-
   let src = sentence.audio_url;
   if (src && !src.startsWith('http')) {
     const filename = src.replace(/\\/g, '/').split('/').pop();
     src = LINGUA.base + `/sentence-audios/${filename}`;
   }
 
+  // Replace the node to drop any previous event listeners from prior sentences
   const refBtn = $('refPlayBtn');
-  // Remove old listener by replacing button clone
   const newBtn = refBtn.cloneNode(true);
   refBtn.parentNode.replaceChild(newBtn, refBtn);
+
+  // Reset to initial state
+  newBtn.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    Play Sentence`;
+  newBtn.disabled = false;
+  newBtn.classList.remove('playing');
 
   let refAudio = null;
 
@@ -787,7 +765,6 @@ function setupRefAudio(sentence) {
       newBtn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         Play Again`;
-      unlockReady();
     };
     refAudio.onerror = () => {
       newBtn.disabled = false;
@@ -795,29 +772,13 @@ function setupRefAudio(sentence) {
       newBtn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         Play Sentence`;
-      showToast('Could not play audio. Continue without it.');
-      unlockReady();
+      showToast('Could not play audio. You can still record.');
     };
     refAudio.play().catch(() => {
       newBtn.disabled = false;
       newBtn.classList.remove('playing');
-      unlockReady();
     });
-
-    unlockReady(); // enable "I'm Ready" as soon as they press play
   });
-}
-
-function unlockReady() {
-  if (!refAudioPlayed) {
-    refAudioPlayed = true;
-    $('btnReady').disabled = false;
-    $('listenHint').textContent = 'Tap "I\'m Ready" when you feel confident';
-  }
-}
-
-function goToReady() {
-  setPhase('ready');
 }
 
 // ─── Recording ────────────────────────────────────────────────────────────────
