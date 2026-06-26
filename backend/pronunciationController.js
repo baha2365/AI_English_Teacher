@@ -105,6 +105,7 @@ async function checkPronunciation(req, res) {
     const transcription = await openai.audio.transcriptions.create({
       file,
       model: 'gpt-4o-mini-transcribe',
+      language: "en",
     });
 
     const actual = (transcription.text || '').trim();
