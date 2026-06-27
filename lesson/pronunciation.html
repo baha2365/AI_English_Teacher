@@ -577,10 +577,12 @@
       <div class="results-list" id="resultsList"></div>
 
       <div class="complete-actions">
-        <a href="parts_select.html" class="btn-choose-part" id="nextPartBtn">
+        <a href="parts_select.html" class="btn-choose-part" id="nextPartBtn"
+           onclick="clearState()">
           Choose Next Part →
         </a>
-        <a href="../dashboard.html" class="btn-dashboard">Dashboard</a>
+        <a href="../dashboard.html" class="btn-dashboard"
+           onclick="clearState()">Dashboard</a>
       </div>
     </div>
 
@@ -1079,7 +1081,8 @@ function renderWordDiff(expected, actual, container) {
 
 // ─── Complete screen ──────────────────────────────────────────────────────────
 function showComplete() {
-  clearState();   // session fully done — wipe so next visit starts from scratch
+  // NOTE: clearState() is called by the nav buttons below, NOT here.
+  // Keeping state alive lets a refresh restore this screen correctly.
 
   // Hide sentence card and all phases
   $('sentenceCard').style.display = 'none';
