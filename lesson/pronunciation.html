@@ -601,6 +601,9 @@ const BASE = (typeof LINGUA !== 'undefined' && LINGUA.pronunciation)
   ? LINGUA.pronunciation
   : `${location.origin}/api/pronunciation`;
 
+// Session key is scoped to this specific part so different parts don't collide
+const SESSION_KEY = `lingua_pronun_${partId}`;
+
 // ─── State ────────────────────────────────────────────────────────────────────
 let sentences   = [];
 let partNumber  = 0;
@@ -632,6 +635,46 @@ function showToast(msg, ms = 3500) {
   t.classList.add('visible');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('visible'), ms);
+}
+
+// ─── Session persistence ──────────────────────────────────────────────────────
+// Persists { currentIdx, results } in sessionStorage so a refresh mid-session
+// returns the user to exactly where they left off.
+// Binary recording data can't be serialised, so after a refresh the user is
+// taken back to the *practice* phase of the current sentence (or the result
+// screen if that sentence was already scored).
+
+function saveState() {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ currentIdx, results }));
+  } catch (e) {
+    console.warn('saveState failed:', e);
+  }
+}
+
+function clearState() {
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+function restoreState(sentenceCount) {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const state = JSON.parse(raw);
+
+    const valid =
+      typeof state.currentIdx === 'number' &&
+      Array.isArray(state.results) &&
+      state.currentIdx >= 0 &&
+      state.currentIdx < sentenceCount &&
+      state.results.length <= sentenceCount;
+
+    if (!valid) { clearState(); return null; }
+    return state;
+  } catch {
+    clearState();
+    return null;
+  }
 }
 
 // ─── Phase management ─────────────────────────────────────────────────────────
@@ -668,7 +711,26 @@ async function init() {
     loader.classList.add('gone');
     setTimeout(() => loader.remove(), 600);
 
-    loadSentence(0);
+    // ── Restore previous session if available ─────────────────────────────────
+    const saved = restoreState(sentences.length);
+    if (saved) {
+      currentIdx = saved.currentIdx;
+      results    = saved.results;
+
+      if (results.length >= sentences.length) {
+        // All sentences were already scored — go straight to the summary screen
+        showComplete();
+      } else {
+        // Restore the active sentence (always lands on practice phase)
+        loadSentence(currentIdx);
+        // If this sentence was already scored, overlay the result screen on top
+        if (results[currentIdx]) {
+          showResult(results[currentIdx]);
+        }
+      }
+    } else {
+      loadSentence(0);
+    }
   } catch (err) {
     console.error('init error:', err);
     $('loaderLabel').textContent = 'Could not load sentences. Refresh to retry.';
@@ -725,6 +787,7 @@ function loadSentence(idx) {
   }
 
   setPhase('practice');
+  saveState();   // persist which sentence we're on
 }
 
 // ─── Reference audio ──────────────────────────────────────────────────────────
@@ -826,7 +889,7 @@ function stopRecording() {
 
 function onRecordStop() {
   if (!chunks.length) {
-    setPhase('ready');
+    setPhase('practice');
     showToast('No audio captured. Please try again.');
     return;
   }
@@ -835,7 +898,7 @@ function onRecordStop() {
   recordedBlob = new Blob(chunks, { type: mime });
 
   if (recordedBlob.size < 800) {
-    setPhase('ready');
+    setPhase('practice');
     showToast('Recording too short. Tap and hold longer.');
     return;
   }
@@ -901,6 +964,7 @@ async function sendForCheck() {
       score:      data.score,
       passed:     data.passed,
     });
+    saveState();   // persist the result before rendering, so a refresh recovers it
 
     showResult(data);
   } catch (err) {
@@ -1015,6 +1079,8 @@ function renderWordDiff(expected, actual, container) {
 
 // ─── Complete screen ──────────────────────────────────────────────────────────
 function showComplete() {
+  clearState();   // session fully done — wipe so next visit starts from scratch
+
   // Hide sentence card and all phases
   $('sentenceCard').style.display = 'none';
   $('dotsRow').style.display      = 'none';
