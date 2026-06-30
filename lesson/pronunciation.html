@@ -1081,6 +1081,17 @@ function renderWordDiff(expected, actual, container) {
 
 // ─── Complete screen ──────────────────────────────────────────────────────────
 function showComplete() {
+
+  // ── Track pronunciation completion for parts_select arc ring ──
+  try {
+    const prDone = JSON.parse(localStorage.getItem('lingua_pr_done') || '[]');
+    const pid = Number(partId);
+    if (!prDone.includes(pid)) {
+      prDone.push(pid);
+      localStorage.setItem('lingua_pr_done', JSON.stringify(prDone));
+    }
+  } catch(e) {}
+  
   // NOTE: clearState() is called by the nav buttons below, NOT here.
   // Keeping state alive lets a refresh restore this screen correctly.
 
