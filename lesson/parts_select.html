@@ -212,8 +212,6 @@
 
     /* ══════════════════════════════════════════
        ZIGZAG NODE TRACK
-       Works identically on desktop and mobile —
-       no media-query override that collapses it.
     ══════════════════════════════════════════ */
     .part-track {
       display: flex;
@@ -229,7 +227,6 @@
       animation: fadeUp 0.3s ease both;
     }
 
-    /* Odd rows push left, even rows push right */
     .part-node:nth-child(odd) {
       flex-direction: row;
       padding-left: 10%;
@@ -246,13 +243,16 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Node button wrapper (holds button + START badge) ── */
+    /* ── Node button wrapper ── */
     .node-btn-wrap {
       position: relative;
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      /* Give the wrap a fixed size so the absolute SVG has a stable anchor */
+      width: 76px;
+      height: 76px;
     }
 
     /* ── 3D circle button ── */
@@ -265,7 +265,7 @@
       cursor: pointer;
       transition: transform 0.1s ease, box-shadow 0.1s ease;
       position: relative;
-      /* subtle inner highlight ring */
+      z-index: 1;
       outline: 4px solid rgba(255,255,255,0.35);
       outline-offset: -6px;
     }
@@ -331,6 +331,7 @@
       white-space: nowrap;
       animation: badgeBounce 1.6s ease-in-out infinite;
       pointer-events: none;
+      z-index: 3;
     }
     .start-badge::after {
       content: '';
@@ -344,6 +345,28 @@
     @keyframes badgeBounce {
       0%, 100% { transform: translateX(-50%) translateY(0); }
       50%       { transform: translateX(-50%) translateY(-5px); }
+    }
+
+    /* ── Arc ring (three task-progress segments around each node button) ── */
+    /*
+       Arc 1 (top-right,  10°→110°) = Vocabulary / word learning
+       Arc 2 (bottom,    130°→230°) = Sentence builder
+       Arc 3 (top-left,  250°→350°) = Pronunciation
+       Green = done, Gray = not yet done.
+    */
+    .arc-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      overflow: visible;
+      z-index: 0;
+      /* width/height set via attributes (108px); only override on mobile */
+    }
+    @media (max-width: 480px) {
+      /* Scale the SVG down proportionally for the 62px mobile button */
+      .arc-ring { width: 88px; height: 88px; }
     }
 
     /* ── Node info text ── */
@@ -388,11 +411,12 @@
     .part-node.is-locked  .tag-xp { background: var(--gray-pale);   color: var(--gray-dark); }
     .part-node.is-current .tag-xp { background: var(--orange-pale); color: var(--orange-dark); }
 
-    /* ── Mobile: KEEP zigzag, just tighten the offset and shrink button ── */
+    /* ── Mobile: tighten the offset and shrink button ── */
     @media (max-width: 480px) {
       .navbar { padding: 0.9rem 1rem; }
       .progress-wrap { top: 64px; }
       .node-btn { width: 62px; height: 62px; font-size: 1.5rem; }
+      .node-btn-wrap { width: 62px; height: 62px; }
       .part-node:nth-child(odd)  { padding-left: 5%; }
       .part-node:nth-child(even) { padding-right: 5%; }
     }
@@ -447,6 +471,47 @@
 
   let currentNodeEl = null;
 
+  // ─── Build three SVG arc segments around each node button ─────────────────
+  //
+  //  Arc 1 (top-right,  10°→110°) — Vocabulary / word learning
+  //  Arc 2 (bottom,    130°→230°) — Sentence builder
+  //  Arc 3 (top-left,  250°→350°) — Pronunciation
+  //
+  //  SVG is 108×108 with the circle center at (54, 54) and arc radius 48.
+  //  0° = 12 o'clock; angles increase clockwise.
+  //
+  function buildArcSvg(vocabDone, sbDone, prDone) {
+    const cx = 54, cy = 54, r = 48, sw = 5.5;
+    const DONE = '#58CC02';   // green  — matches --green
+    const TODO = '#D6D6D6';   // gray   — matches --gray
+
+    // Return an [x, y] point on the circle at `deg` degrees (0 = top, CW)
+    function pt(deg) {
+      const rad = deg * Math.PI / 180;
+      return [
+        (cx + r * Math.sin(rad)).toFixed(2),
+        (cy - r * Math.cos(rad)).toFixed(2),
+      ];
+    }
+
+    // Build a single arc path between `startDeg` and `endDeg`
+    function mkArc(startDeg, endDeg, done) {
+      const [x1, y1] = pt(startDeg);
+      const [x2, y2] = pt(endDeg);
+      const large = (endDeg - startDeg) > 180 ? 1 : 0;
+      return `<path d="M${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2}" `
+           + `stroke="${done ? DONE : TODO}" stroke-width="${sw}" `
+           + `fill="none" stroke-linecap="round"/>`;
+    }
+
+    return `<svg class="arc-ring" width="108" height="108" viewBox="0 0 108 108" aria-hidden="true">`
+      + mkArc(10,  110, vocabDone)   // top-right  → vocabulary
+      + mkArc(130, 230, sbDone)      // bottom     → sentence builder
+      + mkArc(250, 350, prDone)      // top-left   → pronunciation
+      + `</svg>`;
+  }
+
+  // ─── Error helper ─────────────────────────────────────────────────────────
   function showError(message) {
     document.getElementById('statusScreen').innerHTML = `
       <span style="font-size:2.5rem">⚠️</span>
@@ -469,7 +534,10 @@
     });
   }
 
-  function renderParts(parts) {
+  // ─── Render the zigzag node track ─────────────────────────────────────────
+  // sbCompleted / prCompleted are Sets of part IDs (Number) where those tasks
+  // have been finished; loaded from localStorage by init().
+  function renderParts(parts, sbCompleted, prCompleted) {
     const track = document.getElementById('partTrack');
     track.innerHTML = '';
     currentNodeEl = null;
@@ -488,21 +556,28 @@
       node.className = `part-node is-${part.status}`;
       node.style.animationDelay = `${idx * 0.045}s`;
 
-      const icon    = part.status === 'completed' ? '✓'
-                    : part.status === 'locked'    ? '🔒' : '★';
-      const eyebrow = part.status === 'completed' ? 'Completed'
-                    : part.status === 'locked'    ? 'Locked' : 'Up next';
-      const xpTag   = part.status === 'locked'
-                    ? `<span class="tag tag-xp">🔒 Locked</span>`
-                    : `<span class="tag tag-xp">⚡ +10 XP</span>`;
-      const wordTag = part.status !== 'locked'
-                    ? `<span class="tag tag-words">📖 3 words</span>` : '';
+      const icon       = part.status === 'completed' ? '✓'
+                       : part.status === 'locked'    ? '🔒' : '★';
+      const eyebrow    = part.status === 'completed' ? 'Completed'
+                       : part.status === 'locked'    ? 'Locked' : 'Up next';
+      const xpTag      = part.status === 'locked'
+                       ? `<span class="tag tag-xp">🔒 Locked</span>`
+                       : `<span class="tag tag-xp">⚡ +10 XP</span>`;
+      const wordTag    = part.status !== 'locked'
+                       ? `<span class="tag tag-words">📖 3 words</span>` : '';
       const startBadge = part.status === 'current'
-                    ? `<div class="start-badge">START</div>` : '';
+                       ? `<div class="start-badge">START</div>` : '';
+
+      // ── Three-arc progress ring ──────────────────────────────────────────
+      const vocabDone = part.status === 'completed';
+      const sbDone    = sbCompleted.has(part.id);
+      const prDone    = prCompleted.has(part.id);
+      const arcSvg    = buildArcSvg(vocabDone, sbDone, prDone);
 
       node.innerHTML = `
         <div class="node-btn-wrap">
           ${startBadge}
+          ${arcSvg}
           <button
             class="node-btn"
             ${part.status === 'locked' ? 'disabled title="Finish the previous part first"' : ''}
@@ -560,8 +635,18 @@
       const completedSet = new Set(prData.completed);
       const parts = computeStatuses(pData.parts, completedSet);
 
+      // ── Load sentence-builder and pronunciation completion from localStorage
+      // sentence_builder.html saves: lingua_sb_done = JSON array of part IDs
+      // pronunciation.html saves:   lingua_pr_done = JSON array of part IDs
+      const sbCompleted = new Set(
+        (JSON.parse(localStorage.getItem('lingua_sb_done') || '[]')).map(Number)
+      );
+      const prCompleted = new Set(
+        (JSON.parse(localStorage.getItem('lingua_pr_done') || '[]')).map(Number)
+      );
+
       updateProgress(parts, completedSet);
-      renderParts(parts);
+      renderParts(parts, sbCompleted, prCompleted);
 
       document.getElementById('statusScreen').style.display = 'none';
       document.getElementById('mainContent').style.display  = 'block';
