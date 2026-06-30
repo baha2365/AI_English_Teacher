@@ -179,6 +179,16 @@
     .btn-submit:active { transform: scale(0.99); }
     .btn-submit.loading { pointer-events: none; opacity: 0.7; }
 
+    /* ── Forgot password link ── */
+    .forgot-link { text-align: center; margin-top: 0.9rem; }
+    .forgot-btn {
+      background: none; border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+      color: var(--muted); padding: 0;
+      transition: color 0.2s;
+    }
+    .forgot-btn:hover { color: var(--rust); text-decoration: underline; }
+
     .alert {
       display: none; padding: 0.75rem 1rem; border-radius: 8px;
       font-size: 0.83rem; margin-bottom: 1.2rem; border: 1px solid;
@@ -193,7 +203,7 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Verification step ───────────────────────────────────────────────────── */
+    /* ── Back button ── */
     .back-btn {
       display: inline-flex; align-items: center; gap: 0.4rem;
       background: none; border: none; cursor: pointer;
@@ -203,19 +213,30 @@
     }
     .back-btn:hover { color: var(--ink); }
 
-    .verify-icon {
+    /* ── Verify / forgot icon ── */
+    .section-icon {
       width: 62px; height: 62px; border-radius: 16px;
-      background: linear-gradient(135deg, rgba(196,87,42,0.12), rgba(212,168,83,0.08));
-      border: 1px solid rgba(196,87,42,0.22);
       display: flex; align-items: center; justify-content: center;
       font-size: 1.7rem; margin-bottom: 1.1rem;
+    }
+    .section-icon.mail {
+      background: linear-gradient(135deg, rgba(196,87,42,0.12), rgba(212,168,83,0.08));
+      border: 1px solid rgba(196,87,42,0.22);
+    }
+    .section-icon.lock {
+      background: linear-gradient(135deg, rgba(74,103,65,0.12), rgba(212,168,83,0.08));
+      border: 1px solid rgba(74,103,65,0.22);
+    }
+    .section-icon.key {
+      background: linear-gradient(135deg, rgba(212,168,83,0.12), rgba(196,87,42,0.08));
+      border: 1px solid rgba(212,168,83,0.3);
     }
 
     .email-hint {
       font-weight: 500; color: var(--rust); word-break: break-all;
     }
 
-    /* 6 digit code boxes */
+    /* ── 6-digit code boxes ── */
     .code-inputs {
       display: flex; gap: 0.5rem; justify-content: center;
       margin: 1.8rem 0 0.5rem;
@@ -231,26 +252,23 @@
       letter-spacing: 0;
       caret-color: var(--rust);
     }
-    .code-box.filled { border-color: var(--gold) !important; }
+    .code-box.filled  { border-color: var(--gold) !important; }
     .code-box.success {
       border-color: var(--sage) !important;
       background: rgba(74,103,65,0.07) !important;
       color: var(--sage) !important;
     }
 
-    /* expiry timer */
+    /* ── Expiry timer ── */
     .code-timer {
       text-align: center; font-size: 0.8rem; color: var(--muted);
       margin: 0.7rem 0 1.5rem;
     }
-    .timer-val {
-      font-weight: 600; color: var(--rust);
-      font-variant-numeric: tabular-nums;
-    }
-    .timer-val.urgent { color: #C0392B; }
+    .timer-val { font-weight: 600; color: var(--rust); font-variant-numeric: tabular-nums; }
+    .timer-val.urgent  { color: #C0392B; }
     .timer-val.expired { color: var(--muted); font-weight: 400; }
 
-    /* resend row */
+    /* ── Resend row ── */
     .resend-row {
       margin-top: 1.2rem; text-align: center;
       font-size: 0.82rem; color: var(--muted);
@@ -265,7 +283,15 @@
     .resend-btn:disabled { color: var(--muted); cursor: default; }
     .resend-cd { color: var(--muted); font-weight: 400; }
 
-    /* shake animation on wrong code */
+    /* ── Password confirm match indicator ── */
+    .match-hint {
+      font-size: 0.75rem; margin-top: 0.35rem;
+      display: none;
+    }
+    .match-hint.match   { display: block; color: var(--sage); }
+    .match-hint.nomatch { display: block; color: var(--error); }
+
+    /* ── Shake on wrong code ── */
     @keyframes shake {
       0%,100% { transform: translateX(0); }
       15%      { transform: translateX(-7px); }
@@ -331,6 +357,9 @@
           <div class="field-error" id="loginPasswordErr"></div>
         </div>
         <button class="btn-submit" id="loginBtn" onclick="handleLogin()">Sign in</button>
+        <div class="forgot-link">
+          <button type="button" class="forgot-btn" onclick="showForgot()">Forgot your password?</button>
+        </div>
       </div>
 
       <!-- ── REGISTER ── -->
@@ -351,7 +380,7 @@
           <label for="regPassword">Password</label>
           <div class="pw-wrap">
             <input type="password" id="regPassword" placeholder="••••••••"
-                   autocomplete="new-password" oninput="updateStrength(this.value)"/>
+                   autocomplete="new-password" oninput="updateStrength(this.value, 'pwStrength')"/>
             <button class="pw-toggle" type="button" onclick="togglePw('regPassword', this)">👁</button>
           </div>
           <div class="pw-strength" id="pwStrength">
@@ -374,7 +403,7 @@
         <button class="btn-submit" id="registerBtn" onclick="handleRegister()">Create my account</button>
       </div>
 
-      <!-- ── VERIFY ── -->
+      <!-- ── VERIFY (registration) ── -->
       <div id="verifySection" class="form-section" style="display:none;">
         <button class="back-btn" onclick="goBack()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -385,7 +414,7 @@
           Back to registration
         </button>
 
-        <div class="verify-icon">📬</div>
+        <div class="section-icon mail">📬</div>
         <div class="form-title">Check your inbox</div>
         <div class="form-subtitle">
           We sent a 6-digit code to<br>
@@ -393,12 +422,12 @@
         </div>
 
         <div class="code-inputs" id="codeInputsRow">
-          <input class="code-box" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" />
-          <input class="code-box" type="text" inputmode="numeric" maxlength="1" />
-          <input class="code-box" type="text" inputmode="numeric" maxlength="1" />
-          <input class="code-box" type="text" inputmode="numeric" maxlength="1" />
-          <input class="code-box" type="text" inputmode="numeric" maxlength="1" />
-          <input class="code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reg-code-box" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" />
+          <input class="code-box reg-code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reg-code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reg-code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reg-code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reg-code-box" type="text" inputmode="numeric" maxlength="1" />
         </div>
 
         <div class="field-error" id="codeErr"></div>
@@ -419,9 +448,122 @@
         </div>
       </div>
 
+      <!-- ── FORGOT PASSWORD ── -->
+      <div id="forgotSection" class="form-section" style="display:none;">
+        <button class="back-btn" onclick="switchTab('login')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+          Back to sign in
+        </button>
+
+        <div class="section-icon key">🔑</div>
+        <div class="form-title">Forgot your password?</div>
+        <div class="form-subtitle">
+          Enter your account email and we'll send you a 6-digit reset code.
+        </div>
+
+        <div class="field">
+          <label for="forgotEmail">Email address</label>
+          <input type="email" id="forgotEmail" placeholder="you@example.com" autocomplete="email"/>
+          <div class="field-error" id="forgotEmailErr"></div>
+        </div>
+
+        <button class="btn-submit" id="forgotBtn" onclick="handleForgot()">
+          Send Reset Code
+        </button>
+      </div>
+
+      <!-- ── RESET VERIFY ── -->
+      <div id="resetVerifySection" class="form-section" style="display:none;">
+        <button class="back-btn" onclick="goBackToForgot()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+          Back
+        </button>
+
+        <div class="section-icon lock">🔒</div>
+        <div class="form-title">Check your inbox</div>
+        <div class="form-subtitle">
+          We sent a reset code to<br>
+          <span class="email-hint" id="resetEmailDisplay"></span>
+        </div>
+
+        <div class="code-inputs" id="resetCodeInputsRow">
+          <input class="code-box reset-code-box" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" />
+          <input class="code-box reset-code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reset-code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reset-code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reset-code-box" type="text" inputmode="numeric" maxlength="1" />
+          <input class="code-box reset-code-box" type="text" inputmode="numeric" maxlength="1" />
+        </div>
+
+        <div class="field-error" id="resetCodeErr"></div>
+
+        <div class="code-timer">
+          Code expires in <span class="timer-val" id="resetTimerDisplay">10:00</span>
+        </div>
+
+        <button class="btn-submit" id="resetVerifyBtn" onclick="handleResetVerify()">
+          Verify Code
+        </button>
+
+        <div class="resend-row">
+          Didn't receive it?
+          <button id="resetResendBtn" class="resend-btn" onclick="handleResendReset()" disabled>
+            Resend code <span class="resend-cd" id="resetResendCd">(60s)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── RESET PASSWORD ── -->
+      <div id="resetPasswordSection" class="form-section" style="display:none;">
+        <div class="section-icon lock">✅</div>
+        <div class="form-title">Create new password</div>
+        <div class="form-subtitle">
+          Choose a strong password for<br>
+          <span class="email-hint" id="resetPasswordEmailDisplay"></span>
+        </div>
+
+        <div class="field">
+          <label for="newPassword">New password</label>
+          <div class="pw-wrap">
+            <input type="password" id="newPassword" placeholder="••••••••"
+                   autocomplete="new-password"
+                   oninput="updateStrength(this.value, 'pwStrength2'); checkPasswordMatch()"/>
+            <button class="pw-toggle" type="button" onclick="togglePw('newPassword', this)">👁</button>
+          </div>
+          <div class="pw-strength" id="pwStrength2">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="field-error" id="newPasswordErr"></div>
+        </div>
+
+        <div class="field">
+          <label for="confirmPassword">Confirm new password</label>
+          <div class="pw-wrap">
+            <input type="password" id="confirmPassword" placeholder="••••••••"
+                   autocomplete="new-password" oninput="checkPasswordMatch()"/>
+            <button class="pw-toggle" type="button" onclick="togglePw('confirmPassword', this)">👁</button>
+          </div>
+          <div class="match-hint" id="matchHint"></div>
+          <div class="field-error" id="confirmPasswordErr"></div>
+        </div>
+
+        <button class="btn-submit" id="resetPasswordBtn" onclick="handleResetPassword()">
+          Reset Password
+        </button>
+      </div>
+
     </div>
   </div>
 </div>
+
 <script src="/config.js"></script>
 <script>
   const API = LINGUA.auth;
@@ -430,34 +572,52 @@
     window.location.href = 'dashboard.html';
   }
 
+  // ── Session restore ──────────────────────────────────────────────────────────
   (function restoreSession() {
     const step  = sessionStorage.getItem('authStep');
     const email = sessionStorage.getItem('pendingEmail');
     if (step === 'verify' && email) {
-      // Small delay so the DOM is ready
       setTimeout(() => showVerification(email), 0);
     }
+    // Reset flow sessions are not restored on refresh — user starts over
+    // (reset token is in memory only; safer this way)
   })();
 
-  // ── Verification state ──────────────────────────────────────────────────────
-  let pendingEmail     = '';
-  let expiryInterval   = null;
-  let resendInterval   = null;
+  // ── State ────────────────────────────────────────────────────────────────────
+  let pendingEmail        = '';   // registration verify
+  let resetEmail          = '';   // password reset flow
+  let resetTokenValue     = '';   // received after verifying reset code
 
-  // ── Tab switching ───────────────────────────────────────────────────────────
+  let expiryInterval      = null; // registration expiry countdown
+  let resendInterval      = null; // registration resend cooldown
+  let resetExpiryInterval = null; // reset code expiry countdown
+  let resetResendInterval = null; // reset resend cooldown
+
+  // ── All sections ─────────────────────────────────────────────────────────────
+  const SECTIONS = [
+    'loginSection', 'registerSection', 'verifySection',
+    'forgotSection', 'resetVerifySection', 'resetPasswordSection',
+  ];
+
+  function showOnly(id) {
+    SECTIONS.forEach(s => {
+      document.getElementById(s).style.display = (s === id) ? '' : 'none';
+    });
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────────────────
   function switchTab(tab) {
     const isLogin = tab === 'login';
-    document.getElementById('loginSection').style.display    = isLogin ? '' : 'none';
-    document.getElementById('registerSection').style.display = isLogin ? 'none' : '';
-    document.getElementById('verifySection').style.display   = 'none';
-    document.getElementById('tabsBar').style.display         = '';
+    showOnly(isLogin ? 'loginSection' : 'registerSection');
+    document.getElementById('tabsBar').style.display = '';
     document.querySelectorAll('.tab-btn').forEach((b, i) =>
       b.classList.toggle('active', isLogin ? i === 0 : i === 1)
     );
-    clearAlert(); clearErrors();
+    clearAlert();
+    clearErrors();
   }
 
-  // ── Alerts ──────────────────────────────────────────────────────────────────
+  // ── Alerts ───────────────────────────────────────────────────────────────────
   function showAlert(msg, type = 'danger') {
     const el = document.getElementById('alert');
     el.textContent = msg;
@@ -465,131 +625,119 @@
   }
   function clearAlert() {
     const el = document.getElementById('alert');
-    el.className = 'alert'; el.textContent = '';
+    el.className = 'alert';
+    el.textContent = '';
   }
 
-  // ── Field errors ────────────────────────────────────────────────────────────
+  // ── Field errors ─────────────────────────────────────────────────────────────
   function setError(errId, msg) {
     const el = document.getElementById(errId);
     if (el) { el.textContent = msg; el.classList.add('show'); }
-    const input = document.getElementById(errId.replace('Err', ''));
+    const inputId = errId.replace('Err', '');
+    const input   = document.getElementById(inputId);
     if (input) input.classList.add('error');
   }
   function clearErrors() {
-    document.querySelectorAll('.field-error').forEach(e => { e.textContent = ''; e.classList.remove('show'); });
+    document.querySelectorAll('.field-error').forEach(e => {
+      e.textContent = ''; e.classList.remove('show');
+    });
     document.querySelectorAll('input, select').forEach(i => i.classList.remove('error'));
     document.querySelectorAll('.code-box').forEach(b => b.classList.remove('error', 'success'));
+    const mh = document.getElementById('matchHint');
+    if (mh) mh.className = 'match-hint';
   }
 
-  // ── UI helpers ──────────────────────────────────────────────────────────────
+  // ── UI helpers ────────────────────────────────────────────────────────────────
   function togglePw(id, btn) {
     const input = document.getElementById(id);
     const show  = input.type === 'password';
     input.type  = show ? 'text' : 'password';
     btn.textContent = show ? '🙈' : '👁';
   }
-  function updateStrength(val) {
+
+  function updateStrength(val, targetId) {
     let score = 0;
     if (val.length >= 8)           score++;
     if (/[A-Z]/.test(val))         score++;
     if (/\d/.test(val))            score++;
     if (/[^A-Za-z0-9]/.test(val)) score++;
-    document.getElementById('pwStrength').className = `pw-strength${score ? ' s' + score : ''}`;
+    document.getElementById(targetId).className =
+      `pw-strength${score ? ' s' + score : ''}`;
   }
+
+  function checkPasswordMatch() {
+    const pw  = document.getElementById('newPassword').value;
+    const cpw = document.getElementById('confirmPassword').value;
+    const hint = document.getElementById('matchHint');
+    if (!cpw) { hint.className = 'match-hint'; return; }
+    if (pw === cpw) {
+      hint.textContent = '✓ Passwords match';
+      hint.className   = 'match-hint match';
+    } else {
+      hint.textContent = 'Passwords do not match';
+      hint.className   = 'match-hint nomatch';
+    }
+  }
+
   function setLoading(btnId, loading) {
     const btn = document.getElementById(btnId);
     btn.classList.toggle('loading', loading);
     const labels = {
-      loginBtn:    ['Signing in…',   'Sign in'],
-      registerBtn: ['Sending code…', 'Create my account'],
-      verifyBtn:   ['Verifying…',    'Verify & Create Account'],
+      loginBtn:         ['Signing in…',      'Sign in'],
+      registerBtn:      ['Sending code…',    'Create my account'],
+      verifyBtn:        ['Verifying…',       'Verify & Create Account'],
+      forgotBtn:        ['Sending code…',    'Send Reset Code'],
+      resetVerifyBtn:   ['Verifying…',       'Verify Code'],
+      resetPasswordBtn: ['Resetting…',       'Reset Password'],
     };
     const [loadText, normalText] = labels[btnId] || ['Loading…', 'Submit'];
     btn.textContent = loading ? loadText : normalText;
   }
 
   function saveAndRedirect(token, roleId) {
-
     sessionStorage.removeItem('pendingEmail');
     sessionStorage.removeItem('authStep');
-
     localStorage.setItem('token', token);
     localStorage.setItem('role_id', roleId);
     window.location.href = 'dashboard.html';
   }
 
-  // ── Show verification step ──────────────────────────────────────────────────
-  function showVerification(email) {
-    pendingEmail = email;
-
-    sessionStorage.setItem('pendingEmail', email);
-    sessionStorage.setItem('authStep', 'verify');
-
-    document.getElementById('verifyEmailDisplay').textContent = email;
-
-    document.getElementById('loginSection').style.display    = 'none';
-    document.getElementById('registerSection').style.display = 'none';
-    document.getElementById('verifySection').style.display   = '';
-    document.getElementById('tabsBar').style.display         = 'none';
-
-    clearAlert();
-    clearErrors();
-
-    // Reset boxes
-    const boxes = [...document.querySelectorAll('.code-box')];
-    boxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'success', 'error'); });
-    setTimeout(() => boxes[0].focus(), 100);
-
-    startExpiryTimer(10 * 60);
-    startResendTimer(60);
-  }
-
-  function goBack() {
-    clearInterval(expiryInterval);
-    clearInterval(resendInterval);
-
-    sessionStorage.removeItem('pendingEmail');
-    sessionStorage.removeItem('authStep');
-
-    switchTab('register');
-  }
-
-  // ── Countdown timers ────────────────────────────────────────────────────────
-  function startExpiryTimer(totalSeconds) {
-    clearInterval(expiryInterval);
+  // ── Countdown timers ──────────────────────────────────────────────────────────
+  function startExpiryTimer(totalSeconds, displayId, intervalRef) {
+    clearInterval(intervalRef.val);
     let remaining = totalSeconds;
-    renderExpiry(remaining);
-    expiryInterval = setInterval(() => {
+    renderExpiry(remaining, displayId);
+    intervalRef.val = setInterval(() => {
       remaining--;
-      renderExpiry(remaining);
-      if (remaining <= 0) clearInterval(expiryInterval);
+      renderExpiry(remaining, displayId);
+      if (remaining <= 0) clearInterval(intervalRef.val);
     }, 1000);
   }
 
-  function renderExpiry(s) {
-    const el = document.getElementById('timerDisplay');
+  function renderExpiry(s, displayId) {
+    const el = document.getElementById(displayId);
     if (s <= 0) {
       el.textContent = 'Expired';
       el.className   = 'timer-val expired';
       return;
     }
-    const m = String(Math.floor(s / 60)).padStart(2, '0');
+    const m   = String(Math.floor(s / 60)).padStart(2, '0');
     const sec = String(s % 60).padStart(2, '0');
     el.textContent = `${m}:${sec}`;
     el.className   = `timer-val${s <= 60 ? ' urgent' : ''}`;
   }
 
-  function startResendTimer(seconds) {
-    clearInterval(resendInterval);
-    const btn  = document.getElementById('resendBtn');
-    const cdEl = document.getElementById('resendCd');
-    btn.disabled = true;
-    let remaining = seconds;
+  function startResendTimer(seconds, btnId, cdId, intervalRef) {
+    clearInterval(intervalRef.val);
+    const btn  = document.getElementById(btnId);
+    const cdEl = document.getElementById(cdId);
+    btn.disabled     = true;
+    let remaining    = seconds;
     cdEl.textContent = `(${remaining}s)`;
-    resendInterval = setInterval(() => {
+    intervalRef.val  = setInterval(() => {
       remaining--;
       if (remaining <= 0) {
-        clearInterval(resendInterval);
+        clearInterval(intervalRef.val);
         btn.disabled     = false;
         cdEl.textContent = '';
       } else {
@@ -598,19 +746,22 @@
     }, 1000);
   }
 
-  // ── Code box behaviour ──────────────────────────────────────────────────────
-  (function initCodeBoxes() {
-    const boxes = [...document.querySelectorAll('.code-box')];
+  // Object wrappers so we can pass them by reference into startExpiryTimer/startResendTimer
+  const regExpiryRef  = { val: null };
+  const regResendRef  = { val: null };
+  const rstExpiryRef  = { val: null };
+  const rstResendRef  = { val: null };
+
+  // ── Generic code-box initialiser ─────────────────────────────────────────────
+  function initCodeBoxes(selector, onComplete) {
+    const boxes = [...document.querySelectorAll(selector)];
 
     boxes.forEach((box, idx) => {
-      // Select contents on focus so re-typing is easy
       box.addEventListener('focus', () => box.select());
 
       box.addEventListener('input', e => {
         const digit = e.target.value.replace(/\D/g, '').slice(-1);
         e.target.value = digit;
-
-        // Clear any previous error state when user types
         clearErrors();
 
         if (digit) {
@@ -620,9 +771,8 @@
           box.classList.remove('filled');
         }
 
-        // Auto-submit when all 6 filled
         if (boxes.every(b => b.value.length === 1)) {
-          setTimeout(handleVerify, 100);
+          setTimeout(onComplete, 100);
         }
       });
 
@@ -648,14 +798,46 @@
         });
         const focusIdx = Math.min(pasted.length, boxes.length - 1);
         boxes[focusIdx].focus();
-        if (pasted.length === 6) setTimeout(handleVerify, 100);
+        if (pasted.length === 6) setTimeout(onComplete, 100);
       });
     });
-  })();
+  }
 
-  // ── Verify handler ──────────────────────────────────────────────────────────
+  // Initialise both sets of code boxes
+  initCodeBoxes('.reg-code-box',   handleVerify);
+  initCodeBoxes('.reset-code-box', handleResetVerify);
+
+  // ── Registration — show verify step ──────────────────────────────────────────
+  function showVerification(email) {
+    pendingEmail = email;
+    sessionStorage.setItem('pendingEmail', email);
+    sessionStorage.setItem('authStep', 'verify');
+
+    document.getElementById('verifyEmailDisplay').textContent = email;
+    document.getElementById('tabsBar').style.display = 'none';
+    showOnly('verifySection');
+    clearAlert();
+    clearErrors();
+
+    const boxes = [...document.querySelectorAll('.reg-code-box')];
+    boxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'success', 'error'); });
+    setTimeout(() => boxes[0].focus(), 100);
+
+    startExpiryTimer(10 * 60, 'timerDisplay',  regExpiryRef);
+    startResendTimer(60, 'resendBtn', 'resendCd', regResendRef);
+  }
+
+  function goBack() {
+    clearInterval(regExpiryRef.val);
+    clearInterval(regResendRef.val);
+    sessionStorage.removeItem('pendingEmail');
+    sessionStorage.removeItem('authStep');
+    switchTab('register');
+  }
+
+  // ── Registration — verify handler ─────────────────────────────────────────────
   async function handleVerify() {
-    const boxes = [...document.querySelectorAll('.code-box')];
+    const boxes = [...document.querySelectorAll('.reg-code-box')];
     const code  = boxes.map(b => b.value).join('');
 
     if (code.length < 6) {
@@ -677,24 +859,12 @@
       const data = await res.json();
 
       if (data.success) {
-        clearInterval(expiryInterval);
-        clearInterval(resendInterval);
-        // Brief success flash before redirect
+        clearInterval(regExpiryRef.val);
+        clearInterval(regResendRef.val);
         boxes.forEach(b => { b.classList.remove('filled'); b.classList.add('success'); });
         setTimeout(() => saveAndRedirect(data.token, data.user.roleId), 500);
-
       } else {
-        // Shake + error highlight
-        const row = document.getElementById('codeInputsRow');
-        row.classList.remove('shake');
-        void row.offsetWidth; // force reflow for re-trigger
-        row.classList.add('shake');
-        boxes.forEach(b => b.classList.add('error'));
-
-        const errEl = document.getElementById('codeErr');
-        errEl.textContent = data.message || 'Incorrect code. Please try again.';
-        errEl.classList.add('show');
-
+        shakeRow('codeInputsRow', 'codeErr', boxes, data);
         if (data.expired) {
           boxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'error'); });
           boxes[0].focus();
@@ -707,7 +877,7 @@
     }
   }
 
-  // ── Resend handler ──────────────────────────────────────────────────────────
+  // ── Registration — resend handler ─────────────────────────────────────────────
   async function handleResend() {
     try {
       const res  = await fetch(`${API}/resend`, {
@@ -720,11 +890,11 @@
       if (data.success) {
         clearErrors();
         showAlert('New code sent — check your inbox!', 'success');
-        const boxes = [...document.querySelectorAll('.code-box')];
+        const boxes = [...document.querySelectorAll('.reg-code-box')];
         boxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'error', 'success'); });
         boxes[0].focus();
-        startExpiryTimer(10 * 60);
-        startResendTimer(60);
+        startExpiryTimer(10 * 60, 'timerDisplay',  regExpiryRef);
+        startResendTimer(60, 'resendBtn', 'resendCd', regResendRef);
       } else {
         showAlert(data.message || 'Could not resend code.', 'danger');
       }
@@ -733,7 +903,233 @@
     }
   }
 
-  // ── Register ────────────────────────────────────────────────────────────────
+  // ── Forgot password — show step ───────────────────────────────────────────────
+  function showForgot() {
+    document.getElementById('tabsBar').style.display = 'none';
+    showOnly('forgotSection');
+    clearAlert();
+    clearErrors();
+    const input = document.getElementById('forgotEmail');
+    // Pre-fill with login email if present
+    const loginEmail = document.getElementById('loginEmail').value.trim();
+    if (loginEmail) input.value = loginEmail;
+    setTimeout(() => input.focus(), 100);
+  }
+
+  // ── Forgot password — send code ────────────────────────────────────────────────
+  async function handleForgot() {
+    clearErrors();
+    clearAlert();
+
+    const email = document.getElementById('forgotEmail').value.trim();
+    if (!email) { setError('forgotEmailErr', 'Email is required.'); return; }
+
+    setLoading('forgotBtn', true);
+    try {
+      const res  = await fetch(`${API}/forgot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Always show reset-verify step regardless of whether email exists
+        // (server response is intentionally generic to prevent enumeration)
+        showResetVerify(email);
+      } else {
+        showAlert(data.message || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      showAlert('Could not connect to the server. Is it running?');
+    } finally {
+      setLoading('forgotBtn', false);
+    }
+  }
+
+  // ── Password reset — show verify step ─────────────────────────────────────────
+  function showResetVerify(email) {
+    resetEmail = email;
+    document.getElementById('resetEmailDisplay').textContent = email;
+    document.getElementById('tabsBar').style.display = 'none';
+    showOnly('resetVerifySection');
+    clearAlert();
+    clearErrors();
+
+    const boxes = [...document.querySelectorAll('.reset-code-box')];
+    boxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'success', 'error'); });
+    setTimeout(() => boxes[0].focus(), 100);
+
+    startExpiryTimer(10 * 60, 'resetTimerDisplay', rstExpiryRef);
+    startResendTimer(60, 'resetResendBtn', 'resetResendCd', rstResendRef);
+  }
+
+  function goBackToForgot() {
+    clearInterval(rstExpiryRef.val);
+    clearInterval(rstResendRef.val);
+    document.getElementById('tabsBar').style.display = 'none';
+    showOnly('forgotSection');
+    clearAlert();
+    clearErrors();
+  }
+
+  // ── Password reset — verify code ──────────────────────────────────────────────
+  async function handleResetVerify() {
+    const boxes = [...document.querySelectorAll('.reset-code-box')];
+    const code  = boxes.map(b => b.value).join('');
+
+    if (code.length < 6) {
+      const errEl = document.getElementById('resetCodeErr');
+      errEl.textContent = 'Please enter all 6 digits.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    clearErrors();
+    setLoading('resetVerifyBtn', true);
+
+    try {
+      const res  = await fetch(`${API}/verify-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail, code }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        clearInterval(rstExpiryRef.val);
+        clearInterval(rstResendRef.val);
+        resetTokenValue = data.resetToken;
+        // Brief success flash, then show password form
+        boxes.forEach(b => { b.classList.remove('filled'); b.classList.add('success'); });
+        setTimeout(() => showResetPassword(), 500);
+      } else {
+        shakeRow('resetCodeInputsRow', 'resetCodeErr', boxes, data);
+        if (data.expired) {
+          boxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'error'); });
+          boxes[0].focus();
+        }
+      }
+    } catch {
+      showAlert('Could not connect to the server. Is it running?');
+    } finally {
+      setLoading('resetVerifyBtn', false);
+    }
+  }
+
+  // ── Password reset — resend code ──────────────────────────────────────────────
+  async function handleResendReset() {
+    try {
+      const res  = await fetch(`${API}/resend-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        clearErrors();
+        showAlert('New reset code sent — check your inbox!', 'success');
+        const boxes = [...document.querySelectorAll('.reset-code-box')];
+        boxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'error', 'success'); });
+        boxes[0].focus();
+        startExpiryTimer(10 * 60, 'resetTimerDisplay', rstExpiryRef);
+        startResendTimer(60, 'resetResendBtn', 'resetResendCd', rstResendRef);
+      } else {
+        showAlert(data.message || 'Could not resend code.', 'danger');
+      }
+    } catch {
+      showAlert('Could not connect to the server. Is it running?');
+    }
+  }
+
+  // ── Password reset — show new password form ───────────────────────────────────
+  function showResetPassword() {
+    document.getElementById('resetPasswordEmailDisplay').textContent = resetEmail;
+    document.getElementById('tabsBar').style.display = 'none';
+    showOnly('resetPasswordSection');
+    clearAlert();
+    clearErrors();
+    // Reset strength bars and match hint
+    document.getElementById('pwStrength2').className = 'pw-strength';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    setTimeout(() => document.getElementById('newPassword').focus(), 100);
+  }
+
+  // ── Password reset — submit new password ──────────────────────────────────────
+  async function handleResetPassword() {
+    clearErrors();
+    clearAlert();
+
+    const password = document.getElementById('newPassword').value;
+    const confirm  = document.getElementById('confirmPassword').value;
+
+    let hasError = false;
+    if (!password) {
+      setError('newPasswordErr', 'Password is required.');
+      hasError = true;
+    } else if (password.length < 8) {
+      setError('newPasswordErr', 'Password must be at least 8 characters.');
+      hasError = true;
+    }
+    if (!confirm) {
+      setError('confirmPasswordErr', 'Please confirm your new password.');
+      hasError = true;
+    } else if (password && password !== confirm) {
+      setError('confirmPasswordErr', 'Passwords do not match.');
+      hasError = true;
+    }
+    if (hasError) return;
+
+    setLoading('resetPasswordBtn', true);
+    try {
+      const res  = await fetch(`${API}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail, resetToken: resetTokenValue, password }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Clear reset state
+        resetEmail      = '';
+        resetTokenValue = '';
+        // Show success, then slide back to login
+        showAlert('Password reset! You can now sign in with your new password.', 'success');
+        setTimeout(() => {
+          switchTab('login');
+          document.getElementById('loginEmail').value = '';
+          document.getElementById('loginPassword').value = '';
+          // Keep the success alert visible on the login tab
+          showAlert('Password reset! You can now sign in with your new password.', 'success');
+        }, 1800);
+      } else if (data.expired) {
+        showAlert('Reset session has expired. Please start again.', 'danger');
+        setTimeout(() => { switchTab('login'); }, 2500);
+      } else {
+        showAlert(data.message || 'Could not reset password. Please try again.');
+      }
+    } catch {
+      showAlert('Could not connect to the server. Is it running?');
+    } finally {
+      setLoading('resetPasswordBtn', false);
+    }
+  }
+
+  // ── Shared shake helper ───────────────────────────────────────────────────────
+  function shakeRow(rowId, errId, boxes, data) {
+    const row = document.getElementById(rowId);
+    row.classList.remove('shake');
+    void row.offsetWidth; // force reflow
+    row.classList.add('shake');
+    boxes.forEach(b => b.classList.add('error'));
+    const errEl = document.getElementById(errId);
+    errEl.textContent = data.message || 'Incorrect code. Please try again.';
+    errEl.classList.add('show');
+  }
+
+  // ── Register ──────────────────────────────────────────────────────────────────
   async function handleRegister() {
     clearErrors(); clearAlert();
     const name     = document.getElementById('regName').value.trim();
@@ -760,7 +1156,10 @@
       if (data.success && data.pending) {
         showVerification(email);
       } else if (data.errors) {
-        const fieldMap = { name: 'regNameErr', email: 'regEmailErr', password: 'regPasswordErr', level: 'regLevelErr' };
+        const fieldMap = {
+          name: 'regNameErr', email: 'regEmailErr',
+          password: 'regPasswordErr', level: 'regLevelErr',
+        };
         data.errors.forEach(e => { if (fieldMap[e.field]) setError(fieldMap[e.field], e.message); });
       } else {
         showAlert(data.message || 'Registration failed.');
@@ -772,7 +1171,7 @@
     }
   }
 
-  // ── Login ───────────────────────────────────────────────────────────────────
+  // ── Login ─────────────────────────────────────────────────────────────────────
   async function handleLogin() {
     clearErrors(); clearAlert();
     const email    = document.getElementById('loginEmail').value.trim();
@@ -807,12 +1206,18 @@
     }
   }
 
-  // ── Enter key shortcut ──────────────────────────────────────────────────────
+  // ── Enter key shortcut ────────────────────────────────────────────────────────
   document.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
-    if (document.getElementById('verifySection').style.display !== 'none') return; // code boxes handle their own
-    const loginVisible = document.getElementById('loginSection').style.display !== 'none';
-    loginVisible ? handleLogin() : handleRegister();
+    // Code boxes handle Enter themselves via auto-submit; skip those sections
+    const active = SECTIONS.find(s =>
+      document.getElementById(s).style.display !== 'none'
+    );
+    if (active === 'verifySection' || active === 'resetVerifySection') return;
+    if (active === 'loginSection')          handleLogin();
+    else if (active === 'registerSection')  handleRegister();
+    else if (active === 'forgotSection')    handleForgot();
+    else if (active === 'resetPasswordSection') handleResetPassword();
   });
 </script>
 </body>
