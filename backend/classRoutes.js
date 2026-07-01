@@ -18,6 +18,7 @@ const express = require('express');
 const { pool } = require('./Db');
 const { authenticate } = require('./authMiddleware');
 const { v4: uuidv4 } = require('uuid');
+const { endActiveRaceForClassQuiz } = require('./raceRoutes');
 
 // mergeParams: true gives us access to :courseId set by the parent router
 const router = express.Router({ mergeParams: true });
@@ -472,13 +473,13 @@ router.get('/:id/quizzes', authenticate, requireTeacher, async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      `SELECT q.id, q.title, q.description, cqa.assigned_at,
+      `SELECT q.id, q.title, q.description, cqa.assigned_at, cqa.mode,
               COUNT(qq.id)::int AS question_count
          FROM class_quiz_assignments cqa
          JOIN quizzes q ON q.id = cqa.quiz_id
          LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
         WHERE cqa.class_id = $1
-        GROUP BY q.id, cqa.assigned_at
+        GROUP BY q.id, cqa.assigned_at, cqa.mode
         ORDER BY cqa.assigned_at DESC`,
       [id]
     );
@@ -490,10 +491,12 @@ router.get('/:id/quizzes', authenticate, requireTeacher, async (req, res) => {
 });
 
 // ─── POST /api/courses/:courseId/classes/:id/quizzes ──────────────────────────
-// Body: { quiz_ids: [1, 2, 3] } — expose one or more of the teacher's own quizzes.
+// Body: { quiz_ids: [1, 2, 3], mode: 'casual' | 'racing' } — expose one or more
+// of the teacher's own quizzes, either as replayable casual quizzes or as a
+// single-attempt live racing round.
 router.post('/:id/quizzes', authenticate, requireTeacher, async (req, res) => {
   const { courseId, id } = req.params;
-  const { quiz_ids } = req.body;
+  const { quiz_ids, mode = 'casual' } = req.body;
 
   if (!Array.isArray(quiz_ids) || !quiz_ids.length) {
     return res.status(400).json({ success: false, message: 'quiz_ids (non-empty array) is required.' });
@@ -501,6 +504,9 @@ router.post('/:id/quizzes', authenticate, requireTeacher, async (req, res) => {
   const cleanIds = [...new Set(quiz_ids.map(Number).filter(Number.isInteger))];
   if (!cleanIds.length) {
     return res.status(400).json({ success: false, message: 'quiz_ids must contain valid integers.' });
+  }
+  if (!['casual', 'racing'].includes(mode)) {
+    return res.status(400).json({ success: false, message: "mode must be 'casual' or 'racing'." });
   }
 
   try {
@@ -527,21 +533,21 @@ router.post('/:id/quizzes', authenticate, requireTeacher, async (req, res) => {
 
     for (const quizId of cleanIds) {
       await pool.query(
-        `INSERT INTO class_quiz_assignments (class_id, quiz_id, assigned_by)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (class_id, quiz_id) DO NOTHING`,
-        [id, quizId, req.userId]
+        `INSERT INTO class_quiz_assignments (class_id, quiz_id, assigned_by, mode)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (class_id, quiz_id) DO UPDATE SET mode = EXCLUDED.mode`,
+        [id, quizId, req.userId, mode]
       );
     }
 
     const { rows: quizzes } = await pool.query(
-      `SELECT q.id, q.title, q.description, cqa.assigned_at,
+      `SELECT q.id, q.title, q.description, cqa.assigned_at, cqa.mode,
               COUNT(qq.id)::int AS question_count
          FROM class_quiz_assignments cqa
          JOIN quizzes q ON q.id = cqa.quiz_id
          LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
         WHERE cqa.class_id = $1
-        GROUP BY q.id, cqa.assigned_at
+        GROUP BY q.id, cqa.assigned_at, cqa.mode
         ORDER BY cqa.assigned_at DESC`,
       [id]
     );
@@ -580,6 +586,9 @@ router.delete('/:id/quizzes/:quizId', authenticate, requireTeacher, async (req, 
     const io = req.app.get('io');
     if (io) {
       io.to(`class:${id}`).emit('quiz_unassigned', { classId: id, quizId: Number(quizId) });
+      // If this was a racing quiz with a live session, close it out so nobody
+      // is left in a joinable-but-invisible race.
+      await endActiveRaceForClassQuiz(io, id, quizId);
     }
 
     return res.json({ success: true, message: 'Quiz removed from class.' });
