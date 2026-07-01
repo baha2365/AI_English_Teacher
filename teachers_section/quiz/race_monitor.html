@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TilMenger — Race Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0C0A08;
+    --surface:   #181410;
+    --surface-2: #211D17;
+    --surface-3: #2A2520;
+    --border:    rgba(212,168,83,0.1);
+    --border-2:  rgba(212,168,83,0.18);
+    --gold:      #E8B84A;
+    --gold-dim:  rgba(232,184,74,0.15);
+    --rust:      #D4622E;
+    --text:      #F0EAE0;
+    --text-2:    #A89D92;
+    --text-3:    #6B6058;
+    --success:   #5DBF8A;
+    --success-bg:rgba(93,191,138,0.1);
+    --error:     #E85252;
+    --error-bg:  rgba(232,82,82,0.1);
+    --quiz:      #4F6DF5;
+    --quiz-glow: rgba(79,109,245,0.4);
+    --radius:    14px;
+    --radius-sm: 9px;
+    --gold-1: #FFD75E; --gold-2: #C9A227; /* podium 1st */
+    --sil-1:  #E7ECF2; --sil-2:  #9AA5B1; /* podium 2nd */
+    --brz-1:  #E3A063; --brz-2:  #A5652D; /* podium 3rd */
+  }
+  body {
+    font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:radial-gradient(circle, rgba(212,168,83,0.045) 1px, transparent 1px);
+    background-size:44px 44px; pointer-events:none; z-index:0;
+  }
+  .page { position:relative; z-index:1; max-width:920px; margin:0 auto; padding:2rem 1.5rem 4rem; }
+
+  nav {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:1rem 0 1.6rem;
+  }
+  .brand { display:flex; align-items:center; gap:.55rem; text-decoration:none; color:var(--text); font-weight:700; font-size:1rem; }
+  .brand-mark { width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,var(--rust),var(--gold)); display:flex; align-items:center; justify-content:center; font-size:.85rem; }
+  .nav-back { font-size:.78rem; color:var(--text-3); text-decoration:none; border:1px solid var(--border); padding:.38rem .9rem; border-radius:7px; transition:all .18s; }
+  .nav-back:hover { color:var(--text); border-color:var(--border-2); background:var(--surface-2); }
+
+  .quiz-heading { text-align:center; margin-bottom:1.6rem; }
+  .quiz-eyebrow { font-size:.65rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--quiz); margin-bottom:.4rem; display:flex; align-items:center; justify-content:center; gap:.4rem; }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--success); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(93,191,138,.6);} 50%{box-shadow:0 0 0 6px rgba(93,191,138,0);} }
+  .quiz-title { font-size:clamp(1.3rem,4vw,1.8rem); font-weight:800; letter-spacing:-.02em; }
+
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.6rem; }
+
+  /* ── STATE: LOADING / NO SESSION ── */
+  #stateEmpty { text-align:center; padding:4rem 1.5rem; }
+  #stateEmpty .em { font-size:2.4rem; margin-bottom:1rem; opacity:.75; }
+  #stateEmpty h2 { font-size:1.05rem; font-weight:700; margin-bottom:.4rem; }
+  #stateEmpty p { font-size:.85rem; color:var(--text-3); margin-bottom:1.4rem; }
+  .spinner { width:32px; height:32px; border:3px solid rgba(255,255,255,.15); border-top-color:var(--gold); border-radius:50%; animation:spin .7s linear infinite; margin:0 auto 1rem; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+  .btn-primary {
+    display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1.6rem; border-radius:30px;
+    font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:700; color:#fff; text-decoration:none;
+    background:linear-gradient(135deg,var(--quiz),#3450C2); border:none; cursor:pointer;
+    box-shadow:0 4px 18px var(--quiz-glow); transition:transform .18s;
+  }
+  .btn-primary:hover { transform:translateY(-2px); }
+
+  /* ── WAITING ROOM ── */
+  #stateWaiting { display:none; }
+  .waiting-meta { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.4rem; flex-wrap:wrap; }
+  .waiting-meta-item { font-size:.78rem; color:var(--text-3); }
+  .waiting-meta-item strong { color:var(--gold); font-weight:700; }
+  .lobby-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:.7rem; min-height:90px; margin-bottom:1.6rem; }
+  .lobby-chip {
+    display:flex; flex-direction:column; align-items:center; gap:.4rem; padding:.9rem .6rem;
+    background:var(--surface-2); border:1px solid var(--border-2); border-radius:12px;
+    animation:chipIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes chipIn { from{opacity:0;transform:scale(.7);} to{opacity:1;transform:scale(1);} }
+  .lobby-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.78rem; }
+  .lobby-name { font-size:.72rem; font-weight:600; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  .lobby-empty { grid-column:1/-1; text-align:center; padding:2rem; color:var(--text-3); font-size:.82rem; }
+  .waiting-actions { display:flex; gap:.7rem; justify-content:center; flex-wrap:wrap; }
+  .btn-start-race {
+    padding:.85rem 2.2rem; border-radius:30px; font-family:'DM Sans',sans-serif; font-size:.95rem; font-weight:800;
+    background:linear-gradient(135deg,var(--success),#2E9E64); color:#fff; border:none; cursor:pointer;
+    box-shadow:0 6px 22px rgba(93,191,138,.4); transition:transform .18s;
+  }
+  .btn-start-race:hover { transform:translateY(-2px); }
+  .btn-start-race:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+  .btn-cancel-race {
+    padding:.85rem 1.6rem; border-radius:30px; font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:600;
+    background:var(--error-bg); border:1px solid rgba(232,82,82,.28); color:var(--error); cursor:pointer; transition:all .18s;
+  }
+  .btn-cancel-race:hover { background:rgba(232,82,82,.2); }
+
+  /* ── LIVE LEADERBOARD ── */
+  #stateLive { display:none; }
+  .live-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.2rem; gap:1rem; flex-wrap:wrap; }
+  .finish-counter { font-size:.8rem; color:var(--text-2); }
+  .finish-counter strong { color:var(--success); font-weight:800; font-size:1rem; }
+  .btn-end-race {
+    padding:.55rem 1.2rem; border-radius:var(--radius-sm); font-size:.78rem; font-weight:700;
+    background:var(--error-bg); border:1px solid rgba(232,82,82,.28); color:var(--error); cursor:pointer; transition:all .18s;
+  }
+  .btn-end-race:hover { background:rgba(232,82,82,.2); }
+
+  #raceTrack {
+    position:relative;
+    background:rgba(0,0,0,0.2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:10px;
+    overflow:hidden;
+  }
+  .race-row {
+    position:absolute; left:10px; right:10px; height:52px;
+    display:flex; align-items:center; gap:.7rem;
+    transition: top .55s cubic-bezier(.22,1,.36,1);
+  }
+  .race-rank {
+    width:26px; flex-shrink:0; text-align:center; font-weight:800; font-size:.85rem; color:var(--text-2);
+    font-family:'DM Mono',monospace;
+  }
+  .race-bar-wrap { flex:1; min-width:0; position:relative; height:38px; background:var(--surface-2); border-radius:9px; overflow:hidden; }
+  .race-bar {
+    position:absolute; inset:0; width:0%; border-radius:9px;
+    transition: width .55s cubic-bezier(.22,1,.36,1);
+    display:flex; align-items:center; justify-content:space-between; padding:0 .8rem;
+  }
+  .race-bar-name { font-size:.8rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow:0 1px 2px rgba(0,0,0,.35); }
+  .race-bar-score { font-size:.78rem; font-weight:800; color:#fff; font-family:'DM Mono',monospace; flex-shrink:0; text-shadow:0 1px 2px rgba(0,0,0,.35); }
+  .race-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .race-status-dot.finished { background:var(--success); }
+  .race-status-dot.playing  { background:var(--gold); animation:pulse2 1.2s ease-in-out infinite; }
+  .race-status-dot.offline  { background:var(--text-3); }
+  @keyframes pulse2 { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+  /* row bar colors, cycled */
+  .bc-0 { background: linear-gradient(90deg, #D4622E, #E8945F); }
+  .bc-1 { background: linear-gradient(90deg, #4F6DF5, #7C93F8); }
+  .bc-2 { background: linear-gradient(90deg, #2E9E8F, #4FC2B3); }
+  .bc-3 { background: linear-gradient(90deg, #8B35B0, #B565D8); }
+  .bc-4 { background: linear-gradient(90deg, #C9A227, #E8C85E); }
+  .bc-5 { background: linear-gradient(90deg, #E85252, #F08080); }
+
+  /* ── RESULTS / PODIUM ── */
+  #stateResults { display:none; }
+  .results-heading { text-align:center; margin-bottom:2.2rem; }
+  .results-heading .em { font-size:2.6rem; margin-bottom:.5rem; }
+  .results-heading h2 { font-size:1.4rem; font-weight:800; }
+
+  .podium { display:flex; align-items:flex-end; justify-content:center; gap:1rem; margin-bottom:2.4rem; padding:0 .5rem; }
+  .podium-slot { display:flex; flex-direction:column; align-items:center; gap:.6rem; width:120px; }
+  .podium-avatar {
+    width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:1.1rem; color:#1a1408; border:3px solid rgba(255,255,255,.25);
+  }
+  .podium-crown { font-size:1.4rem; margin-bottom:-.3rem; }
+  .podium-name { font-size:.82rem; font-weight:700; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:110px; }
+  .podium-score { font-size:.78rem; font-weight:800; font-family:'DM Mono',monospace; }
+  .podium-pedestal { width:100%; border-radius:10px 10px 0 0; display:flex; align-items:flex-start; justify-content:center; padding-top:.5rem; font-weight:900; font-size:1.3rem; color:rgba(0,0,0,.55); }
+  .pd-1 .podium-avatar { background:linear-gradient(135deg,var(--gold-1),var(--gold-2)); }
+  .pd-1 .podium-pedestal { height:110px; background:linear-gradient(180deg,var(--gold-1),var(--gold-2)); }
+  .pd-2 .podium-avatar { background:linear-gradient(135deg,var(--sil-1),var(--sil-2)); }
+  .pd-2 .podium-pedestal { height:78px; background:linear-gradient(180deg,var(--sil-1),var(--sil-2)); }
+  .pd-3 .podium-avatar { background:linear-gradient(135deg,var(--brz-1),var(--brz-2)); }
+  .pd-3 .podium-pedestal { height:58px; background:linear-gradient(180deg,var(--brz-1),var(--brz-2)); }
+  .pd-2 { order:1; } .pd-1 { order:2; } .pd-3 { order:3; }
+
+  .results-list { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .results-row {
+    display:grid; grid-template-columns:40px 1fr 90px 70px 80px; align-items:center; gap:.8rem;
+    padding:.75rem 1.2rem; border-bottom:1px solid var(--border); font-size:.82rem;
+  }
+  .results-row:last-child { border-bottom:none; }
+  .results-row.head { color:var(--text-3); font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; background:rgba(0,0,0,.15); }
+  .rr-rank { font-family:'DM Mono',monospace; font-weight:800; color:var(--text-2); }
+  .rr-name { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rr-score { font-family:'DM Mono',monospace; font-weight:800; color:var(--gold); text-align:right; }
+  .rr-correct { color:var(--text-3); text-align:right; }
+  .rr-time { color:var(--text-3); text-align:right; font-family:'DM Mono',monospace; }
+
+  .results-footer { text-align:center; margin-top:1.8rem; }
+
+  @media (max-width:560px) {
+    .results-row { grid-template-columns:32px 1fr 70px; }
+    .rr-correct, .rr-time { display:none; }
+    .podium-slot { width:96px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <nav>
+    <a class="brand" href="#" id="brandLink"><div class="brand-mark">✦</div>Til<span style="color:var(--gold);">Menger</span></a>
+    <a class="nav-back" id="navBack" href="#">← Class</a>
+  </nav>
+
+  <div class="quiz-heading">
+    <div class="quiz-eyebrow"><span class="live-dot"></span> Race Monitor</div>
+    <div class="quiz-title" id="quizTitle">Loading…</div>
+  </div>
+
+  <!-- Empty / no active session -->
+  <div id="stateEmpty" class="panel">
+    <div class="spinner" id="loadSpinner"></div>
+    <div id="emptyBody" style="display:none;">
+      <div class="em">🏁</div>
+      <h2>No live race right now</h2>
+      <p>Start a race from the class page to see live standings here.</p>
+      <a class="btn-primary" id="backToClassBtn" href="#">← Back to Class</a>
+    </div>
+  </div>
+
+  <!-- Waiting room -->
+  <div id="stateWaiting" class="panel">
+    <div class="waiting-meta">
+      <div class="waiting-meta-item"><strong id="wQCount">0</strong> questions</div>
+      <div class="waiting-meta-item"><strong id="wPCount">0</strong> students joined</div>
+    </div>
+    <div class="lobby-grid" id="lobbyGrid">
+      <div class="lobby-empty">Waiting for students to join…</div>
+    </div>
+    <div class="waiting-actions">
+      <button class="btn-start-race" id="startRaceBtn" disabled>🏁 Start Race</button>
+      <button class="btn-cancel-race" id="cancelRaceBtn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Live leaderboard -->
+  <div id="stateLive" class="panel">
+    <div class="live-topbar">
+      <div class="finish-counter"><strong id="finCount">0</strong> / <span id="totCount">0</span> finished</div>
+      <button class="btn-end-race" id="endRaceBtn">⏹ End Race Now</button>
+    </div>
+    <div id="raceTrack"></div>
+  </div>
+
+  <!-- Results / podium -->
+  <div id="stateResults" style="display:none;">
+    <div class="results-heading">
+      <div class="em">🏆</div>
+      <h2>Race Complete!</h2>
+    </div>
+    <div class="podium" id="podium"></div>
+    <div class="results-list" id="resultsList"></div>
+    <div class="results-footer">
+      <a class="btn-primary" id="resultsBackBtn" href="#">← Back to Class</a>
+    </div>
+  </div>
+</div>
+
+<script src="../../config.js"></script>
+<script>
+const token = () => localStorage.getItem('token');
+const authH = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${token()}` });
+
+const params  = new URLSearchParams(window.location.search);
+const classId = params.get('classId');
+const quizId  = params.get('quizId');
+let   sessionId = params.get('sessionId') || null;
+
+const backHref = `class_details.html?courseId=${encodeURIComponent(params.get('courseId') || '')}&id=${encodeURIComponent(classId || '')}`;
+document.getElementById('navBack').href = backHref;
+document.getElementById('brandLink').href = backHref;
+document.getElementById('backToClassBtn').href = backHref;
+document.getElementById('resultsBackBtn').href = backHref;
+
+const ROW_H = 60;
+let currentScreen = null;
+let socket = null;
+let lastLeaderboard = [];
+
+function showScreen(name) {
+  if (currentScreen === name) return;
+  currentScreen = name;
+  document.getElementById('stateEmpty').style.display   = name === 'empty'   ? 'block' : 'none';
+  document.getElementById('stateWaiting').style.display  = name === 'waiting' ? 'block' : 'none';
+  document.getElementById('stateLive').style.display     = name === 'live'    ? 'block' : 'none';
+  document.getElementById('stateResults').style.display  = name === 'results' ? 'block' : 'none';
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function initials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  return parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : parts[0].slice(0,2).toUpperCase();
+}
+function colorClass(i) { return `bc-${i % 6}`; }
+function fmtTime(ms) {
+  if (ms === null || ms === undefined) return '—';
+  const s = Math.round(ms / 1000);
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2,'0')}`;
+}
+
+/* ══════════════════════════════════════
+   RESOLVE SESSION (from URL or REST lookup)
+══════════════════════════════════════ */
+async function resolveSession() {
+  if (sessionId) { connectAndJoin(); return; }
+  try {
+    const res  = await fetch(`${LINGUA.race}/classes/${classId}/quizzes/${quizId}/session`, { headers: authH() });
+    const data = await res.json();
+    if (data.success && data.session) {
+      sessionId = data.session.id;
+      document.getElementById('quizTitle').textContent = data.session.quizTitle;
+      connectAndJoin();
+    } else {
+      document.getElementById('loadSpinner').style.display = 'none';
+      document.getElementById('emptyBody').style.display = 'block';
+      document.getElementById('quizTitle').textContent = 'No live race';
+    }
+  } catch {
+    document.getElementById('loadSpinner').style.display = 'none';
+    document.getElementById('emptyBody').style.display = 'block';
+  }
+}
+
+/* ══════════════════════════════════════
+   SOCKET
+══════════════════════════════════════ */
+function connectAndJoin() {
+  const s = document.createElement('script');
+  s.src = `${LINGUA.base}/socket.io/socket.io.js`;
+  document.head.appendChild(s);
+  s.onload = () => {
+    socket = io(LINGUA.base, { transports: ['websocket', 'polling'] });
+    socket.on('connect', () => socket.emit('race_join', { sessionId, token: token() }));
+
+    socket.on('race_state', ({ session, leaderboard }) => {
+      document.getElementById('quizTitle').textContent = session.quizTitle;
+      document.getElementById('wQCount').textContent = session.questionCount;
+      renderForStatus(session.status, leaderboard);
+    });
+    socket.on('race_participant_joined', ({ leaderboard }) => {
+      if (currentScreen === 'waiting') renderLobby(leaderboard);
+    });
+    socket.on('race_begin', () => showScreen('live'));
+    socket.on('race_leaderboard_update', ({ leaderboard }) => {
+      lastLeaderboard = leaderboard;
+      if (currentScreen === 'live') renderTrack(leaderboard);
+      if (currentScreen === 'waiting') renderLobby(leaderboard);
+      updateFinishCounter(leaderboard);
+    });
+    socket.on('race_participant_finished', () => { /* leaderboard_update already re-renders */ });
+    socket.on('race_ended', ({ leaderboard, podium }) => {
+      renderResults(leaderboard, podium);
+      showScreen('results');
+    });
+    socket.on('error', ({ message }) => {
+      console.warn('Race socket error:', message);
+    });
+  };
+}
+
+/* ══════════════════════════════════════
+   RENDER: choose screen for a given status
+══════════════════════════════════════ */
+function renderForStatus(status, leaderboard) {
+  lastLeaderboard = leaderboard;
+  if (status === 'waiting') {
+    showScreen('waiting');
+    renderLobby(leaderboard);
+  } else if (status === 'active') {
+    showScreen('live');
+    renderTrack(leaderboard);
+    updateFinishCounter(leaderboard);
+  } else {
+    // ended, but we joined late — fetch persisted results
+    fetch(`${LINGUA.race}/sessions/${sessionId}/results`, { headers: authH() })
+      .then(r => r.json())
+      .then(d => { if (d.success) { renderResults(d.leaderboard, d.podium); showScreen('results'); } });
+  }
+}
+
+/* ══════════════════════════════════════
+   WAITING ROOM
+══════════════════════════════════════ */
+function renderLobby(leaderboard) {
+  document.getElementById('wPCount').textContent = leaderboard.length;
+  const grid = document.getElementById('lobbyGrid');
+  document.getElementById('startRaceBtn').disabled = leaderboard.length === 0;
+  if (!leaderboard.length) {
+    grid.innerHTML = '<div class="lobby-empty">Waiting for students to join…</div>';
+    return;
+  }
+  grid.innerHTML = leaderboard.map((p, i) => `
+    <div class="lobby-chip">
+      <div class="lobby-avatar ${colorClass(i)}" style="background:none;background-color:${['#D4622E','#4F6DF5','#2E9E8F','#8B35B0','#C9A227','#E85252'][i % 6]};color:#fff;">${initials(p.name)}</div>
+      <div class="lobby-name">${escHtml(p.name)}</div>
+    </div>`).join('');
+}
+
+document.getElementById('startRaceBtn').addEventListener('click', () => {
+  if (!socket) return;
+  socket.emit('race_begin', { sessionId, token: token() });
+});
+document.getElementById('cancelRaceBtn').addEventListener('click', async () => {
+  if (!confirm('Cancel this race? Everyone currently in the lobby will be removed.')) return;
+  try {
+    await fetch(`${LINGUA.race}/classes/${classId}/quizzes/${quizId}/session`, { method:'DELETE', headers: authH() });
+  } catch {}
+  window.location.href = backHref;
+});
+
+/* ══════════════════════════════════════
+   LIVE TRACK (animated racing bars)
+══════════════════════════════════════ */
+function renderTrack(leaderboard) {
+  const track = document.getElementById('raceTrack');
+  track.style.height = `${Math.max(leaderboard.length, 1) * ROW_H}px`;
+
+  const maxScore = Math.max(1, ...leaderboard.map(p => p.score));
+
+  leaderboard.forEach((p) => {
+    let row = document.getElementById(`race-row-${p.studentId}`);
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'race-row';
+      row.id = `race-row-${p.studentId}`;
+      row.style.top = `${(p.rank - 1) * ROW_H}px`;
+      track.appendChild(row);
+    }
+    const widthPct = Math.max(8, Math.round((p.score / maxScore) * 100));
+    const statusClass = p.finished ? 'finished' : (p.online ? 'playing' : 'offline');
+    const colorIdx = hashColorIdx(p.studentId);
+
+    row.style.top = `${(p.rank - 1) * ROW_H}px`;
+    row.innerHTML = `
+      <div class="race-rank">${p.rank}</div>
+      <div class="race-bar-wrap">
+        <div class="race-bar ${colorClass(colorIdx)}" style="width:${widthPct}%;">
+          <span class="race-bar-name">${escHtml(p.name)}</span>
+          <span style="display:flex;align-items:center;gap:.4rem;">
+            <span class="race-status-dot ${statusClass}"></span>
+            <span class="race-bar-score">${p.score}</span>
+          </span>
+        </div>
+      </div>`;
+  });
+
+  // Remove rows for anyone no longer in the leaderboard (shouldn't normally happen)
+  const validIds = new Set(leaderboard.map(p => `race-row-${p.studentId}`));
+  Array.from(track.children).forEach(child => { if (!validIds.has(child.id)) child.remove(); });
+}
+
+function hashColorIdx(id) {
+  let h = 0;
+  const s = String(id);
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  return h % 6;
+}
+
+function updateFinishCounter(leaderboard) {
+  document.getElementById('totCount').textContent = leaderboard.length;
+  document.getElementById('finCount').textContent = leaderboard.filter(p => p.finished).length;
+}
+
+document.getElementById('endRaceBtn').addEventListener('click', () => {
+  if (!confirm('End the race now? Final standings will be locked in.')) return;
+  if (socket) socket.emit('race_end', { sessionId, token: token() });
+});
+
+/* ══════════════════════════════════════
+   RESULTS / PODIUM
+══════════════════════════════════════ */
+function renderResults(leaderboard, podium) {
+  const podiumEl = document.getElementById('podium');
+  const order = [1, 0, 2]; // render 2nd, 1st, 3rd for the classic center-stage layout
+  podiumEl.innerHTML = order.map(i => {
+    const p = podium[i];
+    if (!p) return '';
+    const place = i + 1;
+    const crown = place === 1 ? '👑' : '';
+    return `
+      <div class="podium-slot pd-${place}">
+        ${crown ? `<div class="podium-crown">${crown}</div>` : ''}
+        <div class="podium-avatar">${initials(p.name)}</div>
+        <div class="podium-name">${escHtml(p.name)}</div>
+        <div class="podium-score">${p.score} pts</div>
+        <div class="podium-pedestal">${place}</div>
+      </div>`;
+  }).join('');
+
+  const list = document.getElementById('resultsList');
+  const rest = leaderboard.slice(3);
+  let html = `
+    <div class="results-row head">
+      <div>#</div><div>Student</div><div style="text-align:right;">Score</div><div style="text-align:right;">Correct</div><div style="text-align:right;">Time</div>
+    </div>`;
+  if (!rest.length) {
+    html += `<div class="results-row"><div class="rr-rank">—</div><div class="rr-name" style="color:var(--text-3);">Everyone placed in the top 3 🎉</div></div>`;
+  } else {
+    html += rest.map(p => `
+      <div class="results-row">
+        <div class="rr-rank">${p.rank}</div>
+        <div class="rr-name">${escHtml(p.name)}</div>
+        <div class="rr-score">${p.score}</div>
+        <div class="rr-correct">${p.correctCount}/${p.totalAnswered}</div>
+        <div class="rr-time">${fmtTime(p.totalTimeMs)}</div>
+      </div>`).join('');
+  }
+  list.innerHTML = html;
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+(function init() {
+  const t = localStorage.getItem('token');
+  const r = localStorage.getItem('role_id');
+  if (!t)        { window.location.href = '../../index.html'; return; }
+  if (r !== '2') { window.location.href = '../../dashboard.html'; return; }
+  if (!classId || !quizId) { window.location.href = '../../dashboard.html'; return; }
+  resolveSession();
+})();
+</script>
+</body>
+</html>
