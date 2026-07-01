@@ -15,6 +15,7 @@ const readingRoutes    = require('./readingRoutes');
 const aiTeacherRoutes  = require('./aiTeacherRoutes');
 const pronunciationRoutes = require('./pronunciationRoutes');
 const { router: gameRouter, registerSocketHandlers } = require('./gameRoutes');
+const { router: raceRouter, registerRaceSocketHandlers } = require('./raceRoutes');
 
 const app        = express();
 const httpServer = http.createServer(app);
@@ -48,6 +49,7 @@ const io = new Server(httpServer, {
 });
 app.set('io', io);
 registerSocketHandlers(io);
+registerRaceSocketHandlers(io);
 
 // ─── Body parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -60,6 +62,7 @@ app.use('/api/quizzes',    quizRoutes);
 app.use('/api/courses',    courseRoutes);
 app.use('/api/student',    studentRoutes);
 app.use('/api/game',       gameRouter);
+app.use('/api/race',       raceRouter);
 app.use('/api/reading',    readingRoutes);
 app.use('/api/ai-teacher', aiTeacherRoutes);
 app.use('/api/pronunciation', pronunciationRoutes);
@@ -131,6 +134,13 @@ app.use((err, _req, res, _next) => {
       console.log('   POST   /api/game/classes/:id/start');
       console.log('   GET    /api/game/classes/:id/session');
       console.log('   DELETE /api/game/classes/:id/session');
+
+      console.log('\n── Race (live quiz) ──────────────────────────────');
+      console.log('   POST   /api/race/classes/:classId/quizzes/:quizId/start');
+      console.log('   GET    /api/race/classes/:classId/quizzes/:quizId/session');
+      console.log('   GET    /api/race/classes/:classId/quizzes/:quizId/my-result');
+      console.log('   DELETE /api/race/classes/:classId/quizzes/:quizId/session');
+      console.log('   GET    /api/race/sessions/:sessionId/results');
 
       console.log('\n── Reading ───────────────────────────────────────');
       console.log('   POST   /api/reading');
