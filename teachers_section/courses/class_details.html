@@ -28,6 +28,10 @@
       --quiz-bg:   rgba(79,109,245,0.12);
       --quiz-bd:   rgba(79,109,245,0.28);
       --quiz-glow: rgba(79,109,245,0.4);
+      --race:      #E85252;
+      --race-bg:   rgba(232,82,82,0.12);
+      --race-bd:   rgba(232,82,82,0.28);
+      --race-glow: rgba(232,82,82,0.4);
     }
     html { scroll-behavior: smooth; }
     body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; line-height:1.5; -webkit-font-smoothing:antialiased; }
@@ -87,8 +91,9 @@
     #feedback.err .fb-inner { background:var(--error-bg); border:1px solid var(--error-bd); color:var(--error); }
 
     /* ─── SECTION BAR ─── */
-    .section-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:.9rem; }
+    .section-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:.9rem; gap:.6rem; flex-wrap:wrap; }
     .section-label { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.15em; color:var(--text-3); }
+    .section-bar-actions { display:flex; gap:.55rem; flex-wrap:wrap; }
 
     /* ─── GAME BANNER ─────────────────────────────────────────────── */
     .game-banner {
@@ -340,7 +345,7 @@
       }
 
       .quiz-row {
-        display:grid; grid-template-columns: 1fr 130px 100px 90px;
+        display:grid; grid-template-columns: 1fr 90px 130px 100px 90px;
         align-items:center; gap:1rem; padding:.85rem 1.3rem .85rem 1.5rem;
         border-bottom:1px solid var(--border); animation: rowIn .35s cubic-bezier(.22,1,.36,1) both;
       }
@@ -348,6 +353,26 @@
       .quiz-row:hover { background:rgba(212,168,83,0.028); }
       .quiz-title { font-size:.88rem; font-weight:600; color:var(--text); }
       .quiz-qcount, .quiz-date { font-size:.7rem; color:var(--text-3); }
+      .quiz-mode-tag {
+        font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
+        padding:.2rem .5rem; border-radius:20px; text-align:center; white-space:nowrap;
+      }
+      .quiz-mode-tag.casual { color:var(--quiz); background:var(--quiz-bg); border:1px solid var(--quiz-bd); }
+      .quiz-mode-tag.racing { color:var(--race); background:var(--race-bg); border:1px solid var(--race-bd); }
+      .quiz-race-actions { display:flex; justify-content:flex-end; gap:.4rem; }
+      .btn-start-race-sm {
+        display:inline-flex; align-items:center; gap:.3rem; padding:.32rem .7rem; border-radius:20px;
+        font-family:'DM Sans',sans-serif; font-size:.68rem; font-weight:700; cursor:pointer; white-space:nowrap;
+        background:linear-gradient(135deg,var(--race),#B83636); color:#fff; border:none; transition:transform .15s;
+      }
+      .btn-start-race-sm:hover { transform:scale(1.05); }
+      .btn-monitor-race-sm {
+        display:inline-flex; align-items:center; gap:.3rem; padding:.32rem .7rem; border-radius:20px;
+        font-family:'DM Sans',sans-serif; font-size:.68rem; font-weight:700; cursor:pointer; white-space:nowrap;
+        background:var(--success-bg); color:var(--success); border:1px solid var(--success-bd); transition:transform .15s;
+        text-decoration:none;
+      }
+      .btn-monitor-race-sm:hover { transform:scale(1.05); }
 
       .quiz-pick-row {
         display:flex; align-items:center; gap:.7rem; padding:.7rem .9rem;
@@ -364,6 +389,9 @@
         font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
         color:var(--quiz); background:var(--quiz-bg); border:1px solid var(--quiz-bd);
         padding:.15rem .5rem; border-radius:20px; flex-shrink:0;
+      }
+      .quiz-pick-switch-note {
+        font-size:.64rem; color:var(--gold); margin-top:.15rem; font-weight:600;
       }
   </style>
 </head>
@@ -472,10 +500,16 @@
 ═══════════════════════════════════════ -->
 <div class="section-bar">
   <span class="section-label">📝 Quizzes</span>
-  <button class="btn-create" id="openExposeQuizBtn"
-    style="background:linear-gradient(135deg,var(--quiz),#3450C2);box-shadow:0 4px 18px var(--quiz-glow),inset 0 1px 0 rgba(255,255,255,0.12);">
-    <span class="ic">+</span>Expose Quiz
-  </button>
+  <div class="section-bar-actions">
+    <button class="btn-create" id="openExposeQuizBtn"
+      style="background:linear-gradient(135deg,var(--quiz),#3450C2);box-shadow:0 4px 18px var(--quiz-glow),inset 0 1px 0 rgba(255,255,255,0.12);">
+      <span class="ic">+</span>Expose Casual Quiz
+    </button>
+    <button class="btn-create" id="openExposeRaceBtn"
+      style="background:linear-gradient(135deg,var(--race),#B83636);box-shadow:0 4px 18px var(--race-glow),inset 0 1px 0 rgba(255,255,255,0.12);">
+      <span class="ic">🏁</span>Expose Racing Quiz
+    </button>
+  </div>
 </div>
 
 <div id="quizLoadingState" style="display:flex;align-items:center;gap:.75rem;padding:2rem;color:var(--text-3);font-size:.84rem;">
@@ -484,7 +518,7 @@
 <div id="quizEmptyState" style="display:none;text-align:center;padding:2.5rem 1.5rem;border:1px dashed var(--border-2);border-radius:var(--radius);background:var(--surface);margin-bottom:2rem;">
   <div style="font-size:1.8rem;margin-bottom:.6rem;opacity:.7;">📝</div>
   <div style="font-size:.92rem;font-weight:600;color:var(--text-2);margin-bottom:.25rem;">No quizzes exposed</div>
-  <div style="font-size:.78rem;color:var(--text-3);">Expose a quiz so students can see and play it.</div>
+  <div style="font-size:.78rem;color:var(--text-3);">Expose a casual quiz for untimed practice, or a racing quiz for a live graded round.</div>
 </div>
 <div id="quizListWrap" style="display:none;margin-bottom:2rem;">
   <div class="roster-panel" id="quizPanel"></div>
@@ -548,16 +582,16 @@
   </div>
 </div>
 
-<!-- EXPOSE QUIZ MODAL -->
+<!-- EXPOSE QUIZ MODAL (shared by casual + racing — mode set by currentExposeMode) -->
 <div class="modal-backdrop" id="exposeQuizModal" role="dialog" aria-modal="true" aria-label="Expose Quiz">
   <div class="modal" id="exposeQuizModalCard">
     <div class="modal-glow" aria-hidden="true"></div>
     <div class="modal-top-border" aria-hidden="true"></div>
     <button class="modal-x" id="exposeQuizModalXBtn" aria-label="Close">✕</button>
     <div class="modal-header">
-      <div class="modal-icon-wrap" aria-hidden="true">📝</div>
-      <div class="modal-title">Expose Quizzes</div>
-      <div class="modal-sub">Select one or more of your quizzes to make visible to this class.</div>
+      <div class="modal-icon-wrap" aria-hidden="true" id="exposeQuizIcon">📝</div>
+      <div class="modal-title" id="exposeQuizTitle">Expose Quizzes</div>
+      <div class="modal-sub" id="exposeQuizSub">Select one or more of your quizzes to make visible to this class.</div>
     </div>
     <div class="modal-body">
       <div id="exposeQuizList" style="display:flex;flex-direction:column;gap:.5rem;max-height:320px;overflow-y:auto;"></div>
@@ -633,6 +667,7 @@
 ══════════════════════════════════════ */
 const API       = LINGUA.courses;
 const GAME_API  = LINGUA.game;
+const RACE_API  = LINGUA.race;
 const token     = () => localStorage.getItem('token');
 const authH     = (extra = {}) => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${token()}`, ...extra });
 
@@ -762,6 +797,15 @@ socketScript.onload = () => {
       if (session && session.status !== 'ended' && !activeSession) {
         setGameBannerActive(session);
       }
+    });
+
+    socket.on('race_started', ({ quizId: rQuizId }) => {
+      liveRaceByQuiz[rQuizId] = true;
+      updateQuizRowRaceControls(rQuizId);
+    });
+    socket.on('race_session_ended', ({ quizId: rQuizId }) => {
+      delete liveRaceByQuiz[rQuizId];
+      updateQuizRowRaceControls(rQuizId);
     });
   } catch(e) { /* socket.io not available — game banner still works via REST */ }
 };
@@ -1209,13 +1253,15 @@ document.getElementById('exposeModal').addEventListener('click', function(e){ if
 
 
 /* ══════════════════════════════════════
-   QUIZZES
+   QUIZZES (casual + racing)
 ══════════════════════════════════════ */
 const QUIZ_API       = `${LINGUA.base}/api/quizzes`;
 const CLASS_QUIZ_URL = `${CLASS_URL}/quizzes`;
 let exposedQuizzes    = [];
 let allTeacherQuizzes = [];
 let selectedQuizIds   = new Set();
+let currentExposeMode = 'casual';
+let liveRaceByQuiz    = {}; // quizId -> true while a race session is live
 
 async function loadClassQuizzes() {
   const loading = document.getElementById('quizLoadingState');
@@ -1229,6 +1275,7 @@ async function loadClassQuizzes() {
     if (!res.ok || !data.success) { showFeedback(data.message || 'Failed to load quizzes.', 'err'); return; }
     exposedQuizzes = data.quizzes || [];
     renderClassQuizzes();
+    checkAllRaceStatuses();
   } catch {
     loading.style.display = 'none';
     showFeedback('Could not reach the server.', 'err');
@@ -1241,13 +1288,64 @@ function renderClassQuizzes() {
   const panel = document.getElementById('quizPanel');
   if (!exposedQuizzes.length) { empty.style.display = 'block'; wrap.style.display = 'none'; return; }
   empty.style.display = 'none'; wrap.style.display = 'block';
-  panel.innerHTML = exposedQuizzes.map(q => `
+  panel.innerHTML = exposedQuizzes.map(q => {
+    const modeTag = q.mode === 'racing'
+      ? `<span class="quiz-mode-tag racing">🏁 Racing</span>`
+      : `<span class="quiz-mode-tag casual">📝 Casual</span>`;
+    const actionCell = q.mode === 'racing'
+      ? `<div class="quiz-race-actions" id="race-actions-${q.id}"></div>`
+      : `<div class="student-action"><button class="btn-ghost-sm danger" onclick="removeClassQuiz(${q.id})">× Remove</button></div>`;
+    return `
     <div class="quiz-row" id="quiz-${q.id}">
       <div class="quiz-title">${escHtml(q.title)}</div>
+      ${modeTag}
       <div class="quiz-qcount">❓ ${q.question_count} question${q.question_count !== 1 ? 's' : ''}</div>
       <div class="quiz-date">${new Date(q.assigned_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div>
-      <div class="student-action"><button class="btn-ghost-sm danger" onclick="removeClassQuiz(${q.id})">× Remove</button></div>
-    </div>`).join('');
+      ${actionCell}
+    </div>`;
+  }).join('');
+
+  // Racing rows get their action buttons filled in once we know live-session status
+  exposedQuizzes.filter(q => q.mode === 'racing').forEach(q => updateQuizRowRaceControls(q.id));
+}
+
+async function checkAllRaceStatuses() {
+  const racingQuizzes = exposedQuizzes.filter(q => q.mode === 'racing');
+  for (const q of racingQuizzes) {
+    try {
+      const res  = await fetch(`${RACE_API}/classes/${classId}/quizzes/${q.id}/session`, { headers: authH() });
+      const data = await res.json();
+      if (data.success && data.session) liveRaceByQuiz[q.id] = true;
+      else delete liveRaceByQuiz[q.id];
+    } catch { /* leave as unknown — button defaults to "Start Race" */ }
+    updateQuizRowRaceControls(q.id);
+  }
+}
+
+function updateQuizRowRaceControls(quizId) {
+  const cell = document.getElementById(`race-actions-${quizId}`);
+  if (!cell) return; // row not rendered (or it's a casual quiz) — nothing to do
+  const monitorHref = `race_monitor.html?classId=${classId}&quizId=${quizId}&courseId=${courseId}`;
+  const removeBtn = `<button class="btn-ghost-sm danger" onclick="removeClassQuiz(${quizId})" title="Remove">×</button>`;
+  if (liveRaceByQuiz[quizId]) {
+    cell.innerHTML = `<a class="btn-monitor-race-sm" href="${monitorHref}" target="_blank">📡 Monitor Live</a>${removeBtn}`;
+  } else {
+    cell.innerHTML = `<button class="btn-start-race-sm" onclick="startRace(${quizId})">🏁 Start Race</button>${removeBtn}`;
+  }
+}
+
+async function startRace(quizId) {
+  try {
+    const res  = await fetch(`${RACE_API}/classes/${classId}/quizzes/${quizId}/start`, { method:'POST', headers: authH() });
+    const data = await res.json();
+    if (!res.ok || !data.success) { showFeedback(data.message || 'Could not start race.', 'err'); return; }
+    liveRaceByQuiz[quizId] = true;
+    updateQuizRowRaceControls(quizId);
+    showFeedback('Race started! Students will be notified.', 'ok');
+    window.open(`race_monitor.html?classId=${classId}&quizId=${quizId}&sessionId=${data.session.id}&courseId=${courseId}`, '_blank');
+  } catch {
+    showFeedback('Server error.', 'err');
+  }
 }
 
 async function removeClassQuiz(quizId) {
@@ -1256,13 +1354,27 @@ async function removeClassQuiz(quizId) {
     const data = await res.json();
     if (!res.ok || !data.success) { showFeedback(data.message || 'Could not remove quiz.', 'err'); return; }
     exposedQuizzes = exposedQuizzes.filter(q => q.id !== quizId);
+    delete liveRaceByQuiz[quizId];
     renderClassQuizzes();
     showFeedback('Quiz removed from class.', 'ok');
   } catch { showFeedback('Server error.', 'err'); }
 }
 
-async function openExposeQuizModal() {
+/* ── Expose modal (shared, mode-aware) ── */
+async function openExposeQuizModal(mode) {
+  currentExposeMode = mode;
   selectedQuizIds = new Set();
+
+  const isRacing = mode === 'racing';
+  document.getElementById('exposeQuizIcon').textContent = isRacing ? '🏁' : '📝';
+  document.getElementById('exposeQuizTitle').textContent = isRacing ? 'Expose Racing Quiz' : 'Expose Casual Quiz';
+  document.getElementById('exposeQuizSub').textContent = isRacing
+    ? 'Pick a quiz to run as a live, single-attempt racing round. Students are ranked by speed and accuracy.'
+    : 'Select one or more of your quizzes for untimed, replayable practice.';
+  document.getElementById('exposeQuizSubmitBtn').style.background = isRacing
+    ? 'linear-gradient(135deg,var(--race),#B83636)'
+    : 'linear-gradient(135deg,var(--quiz),#3450C2)';
+
   document.getElementById('exposeQuizModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   document.getElementById('exposeQuizErr').classList.remove('show');
@@ -1281,21 +1393,24 @@ async function openExposeQuizModal() {
 
 function renderExposeQuizList() {
   const listEl = document.getElementById('exposeQuizList');
-  const exposedIds = new Set(exposedQuizzes.map(q => q.id));
+  const exposedByMode = new Map(exposedQuizzes.map(q => [q.id, q.mode]));
   if (!allTeacherQuizzes.length) {
     listEl.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--text-3);font-size:.82rem;">You haven't created any quizzes yet. <a href="create_quiz.html" style="color:var(--quiz);">Create one</a>.</div>`;
     return;
   }
   listEl.innerHTML = allTeacherQuizzes.map(q => {
-    const already = exposedIds.has(q.id);
+    const existingMode = exposedByMode.get(q.id);
+    const sameMode = existingMode === currentExposeMode;
+    const switching = existingMode && existingMode !== currentExposeMode;
     return `
-      <label class="quiz-pick-row" id="quizpick-${q.id}" style="${already ? 'opacity:.5;cursor:default;' : ''}">
-        <input type="checkbox" data-quiz-id="${q.id}" ${already ? 'disabled' : ''} onchange="toggleQuizPick(${q.id}, this)">
+      <label class="quiz-pick-row" id="quizpick-${q.id}" style="${sameMode ? 'opacity:.5;cursor:default;' : ''}">
+        <input type="checkbox" data-quiz-id="${q.id}" ${sameMode ? 'disabled' : ''} onchange="toggleQuizPick(${q.id}, this)">
         <div class="quiz-pick-info">
           <div class="quiz-pick-title">${escHtml(q.title)}</div>
           <div class="quiz-pick-meta">${q.question_count} question${q.question_count !== 1 ? 's' : ''}</div>
+          ${switching ? `<div class="quiz-pick-switch-note">Currently exposed as ${existingMode === 'racing' ? 'Racing' : 'Casual'} — checking this switches it to ${currentExposeMode === 'racing' ? 'Racing' : 'Casual'}.</div>` : ''}
         </div>
-        ${already ? '<span class="quiz-pick-exposed-tag">Already exposed</span>' : ''}
+        ${sameMode ? '<span class="quiz-pick-exposed-tag">Already exposed</span>' : ''}
       </label>`;
   }).join('');
 }
@@ -1334,7 +1449,7 @@ document.getElementById('exposeQuizSubmitBtn').addEventListener('click', async (
   try {
     const res  = await fetch(CLASS_QUIZ_URL, {
       method:'POST', headers: authH(),
-      body: JSON.stringify({ quiz_ids: Array.from(selectedQuizIds) })
+      body: JSON.stringify({ quiz_ids: Array.from(selectedQuizIds), mode: currentExposeMode })
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
@@ -1346,6 +1461,7 @@ document.getElementById('exposeQuizSubmitBtn').addEventListener('click', async (
     closeExposeQuizModal();
     exposedQuizzes = data.quizzes;
     renderClassQuizzes();
+    checkAllRaceStatuses();
     showFeedback('Quiz(zes) exposed to class.', 'ok');
   } catch {
     errEl.textContent = 'Server error.';
@@ -1354,7 +1470,8 @@ document.getElementById('exposeQuizSubmitBtn').addEventListener('click', async (
   btn.disabled = false; btn.textContent = 'Expose Selected';
 });
 
-document.getElementById('openExposeQuizBtn').addEventListener('click', openExposeQuizModal);
+document.getElementById('openExposeQuizBtn').addEventListener('click', () => openExposeQuizModal('casual'));
+document.getElementById('openExposeRaceBtn').addEventListener('click', () => openExposeQuizModal('racing'));
 document.getElementById('exposeQuizCancelBtn').addEventListener('click', closeExposeQuizModal);
 document.getElementById('exposeQuizModalXBtn').addEventListener('click', closeExposeQuizModal);
 document.getElementById('exposeQuizModal').addEventListener('click', function(e){ if(e.target===this) closeExposeQuizModal(); });
