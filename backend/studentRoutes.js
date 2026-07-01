@@ -152,6 +152,8 @@ router.get('/classes/:id/reading-tasks', authenticate, authorizeRole(ROLE_IDS.st
 
 // ─── GET /api/student/classes/:id/quizzes ──────────────────────────────────────
 // List quizzes exposed to a class — only if the student is enrolled.
+// Each quiz carries its `mode` ('casual' | 'racing'). Racing quizzes also
+// carry `race_completed` so the frontend can gate replay.
 router.get('/classes/:id/quizzes', authenticate, authorizeRole(ROLE_IDS.student), async (req, res) => {
   const { id } = req.params;
   try {
@@ -164,15 +166,22 @@ router.get('/classes/:id/quizzes', authenticate, authorizeRole(ROLE_IDS.student)
     }
 
     const { rows } = await pool.query(
-      `SELECT q.id, q.title, q.description, cqa.assigned_at,
-              COUNT(qq.id)::int AS question_count
+      `SELECT q.id, q.title, q.description, cqa.assigned_at, cqa.mode,
+              COUNT(DISTINCT qq.id)::int AS question_count,
+              EXISTS (
+                SELECT 1
+                  FROM quiz_race_participants qrp
+                  JOIN quiz_race_sessions qrs ON qrs.id = qrp.session_id
+                 WHERE qrs.class_id = cqa.class_id AND qrs.quiz_id = cqa.quiz_id
+                   AND qrp.student_id = $2 AND qrp.finished_at IS NOT NULL
+              ) AS race_completed
          FROM class_quiz_assignments cqa
          JOIN quizzes q ON q.id = cqa.quiz_id
          LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
         WHERE cqa.class_id = $1
-        GROUP BY q.id, cqa.assigned_at
+        GROUP BY q.id, cqa.assigned_at, cqa.mode, cqa.class_id, cqa.quiz_id
         ORDER BY cqa.assigned_at DESC`,
-      [id]
+      [id, req.userId]
     );
     return res.json({ success: true, quizzes: rows });
   } catch (err) {
