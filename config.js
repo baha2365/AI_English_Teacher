@@ -27,6 +27,7 @@ const LINGUA = (() => {
     reading: `${base}/api/reading`,
     aiTeacher: `${base}/api/ai-teacher`,
     pronunciation: `${base}/api/pronunciation`,
+    race: `${base}/api/race`,
   };
 })();
 
