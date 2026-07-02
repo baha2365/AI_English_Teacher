@@ -465,7 +465,7 @@
         <div class="game-banner-sub" id="gameBannerSub">A game is currently running for this class.</div>
       </div>
       <div class="game-banner-actions">
-        <a class="btn-join-game" id="joinGameLink" href="#" target="_blank">▶ Open Game Room</a>
+        <a class="btn-join-game" id="joinGameLink" href="#">▶ Open Game Room</a>
         <button class="btn-end-game" id="endGameBtn">⏹ End Game</button>
       </div>
     </div>
@@ -743,7 +743,7 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
     setGameBannerActive(data.session);
     showFeedback('Game started! Students can now join.', 'ok');
     // Open the game room for the teacher
-    window.open(buildGameRoomUrl(), '_blank');
+    window.location.href = buildGameRoomUrl();
   } catch {
     showFeedback('Server error.', 'err');
     btn.disabled = false;
@@ -1328,7 +1328,7 @@ function updateQuizRowRaceControls(quizId) {
   const monitorHref = `../quiz/race_monitor.html?classId=${classId}&quizId=${quizId}&courseId=${courseId}`;
   const removeBtn = `<button class="btn-ghost-sm danger" onclick="removeClassQuiz(${quizId})" title="Remove">×</button>`;
   if (liveRaceByQuiz[quizId]) {
-    cell.innerHTML = `<a class="btn-monitor-race-sm" href="${monitorHref}" target="_blank">📡 Monitor Live</a>${removeBtn}`;
+    cell.innerHTML = `<a class="btn-monitor-race-sm" href="${monitorHref}">📡 Monitor Live</a>${removeBtn}`;
   } else {
     cell.innerHTML = `<button class="btn-start-race-sm" onclick="startRace(${quizId})">🏁 Start Race</button>${removeBtn}`;
   }
@@ -1342,7 +1342,7 @@ async function startRace(quizId) {
     liveRaceByQuiz[quizId] = true;
     updateQuizRowRaceControls(quizId);
     showFeedback('Race started! Students will be notified.', 'ok');
-    window.open(`../quiz/race_monitor.html?classId=${classId}&quizId=${quizId}&sessionId=${data.session.id}&courseId=${courseId}`, '_blank');
+    window.location.href = `../quiz/race_monitor.html?classId=${classId}&quizId=${quizId}&sessionId=${data.session.id}&courseId=${courseId}`;
   } catch {
     showFeedback('Server error.', 'err');
   }
